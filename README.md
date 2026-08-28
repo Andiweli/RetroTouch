@@ -3,15 +3,20 @@
 > A lightweight, configurable and reusable touch-control overlay for Android games.
 
 [![Android API](https://img.shields.io/badge/Android-API%2016--36-3DDC84?logo=android&logoColor=white)](https://developer.android.com/)
-[![Language](https://img.shields.io/badge/Java-8-ED8B00?logo=openjdk&logoColor=white)](https://www.java.com/)
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Status](https://img.shields.io/badge/Status-1.0.0--beta.4-orange)](#project-status)
+[![Language](https://img.shields.io/badge/Java-8-ED8B00?logo=openjdk&logoColor=white)](https://www.java.com/)
+![AI](https://img.shields.io/badge/AI-assisted%20coding-6e7781)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 RetroTouch is an engine-agnostic Android touch-controls library for games and source ports. It adds a resolution-independent virtual joystick, configurable action buttons, relative FPS look controls and optional menu navigation above an existing Android game view.
 
 The overlay is delivered as a replaceable Android Archive (`.aar`) and is suitable for Java, JNI, SDL, OpenGL, `SurfaceView`, `GLSurfaceView` and native game engines. The game keeps ownership of its input system: RetroTouch emits stable action IDs and normalized movement/look callbacks, while a small game-specific bridge maps them to keys, axes or engine events.
 
 RetroTouch was created for retro FPS ports that need modern Android multitouch controls without hard-coding a different overlay into every game.
+
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/ca590585-8451-4f00-bddb-244ef07e0c3b" />
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/d1d895b4-6f10-4eb6-b3f6-f6b210013eb1" />
+
 
 ## Key features
 
@@ -282,4 +287,4 @@ This separation is important because MobileTouchControls is licensed under GPLv2
 
 RetroTouch is released under the [MIT License](LICENSE).
 
-Copyright © 2026 Andreas and RetroTouch contributors.
+Copyright © 2026 Andreas 'Andiweli' Stürmer.
