@@ -1,4 +1,4 @@
-# RetroTouch 1.0.0-beta.5 — Einbau- und Bedienungsanleitung
+# RetroTouch 1.0.0-beta.6 — Einbau- und Bedienungsanleitung
 
 ## 1. Was RetroTouch ist
 
@@ -41,7 +41,7 @@ Das Spiel übernimmt:
 
 ## 3. AAR einbinden
 
-`RetroTouch-1.0.0-beta.5.aar` hierhin kopieren:
+`RetroTouch-1.0.0-beta.6.aar` hierhin kopieren:
 
 ```text
 app/libs/retrotouch.aar
@@ -114,6 +114,12 @@ Buttonbeschriftungen verwenden in jedem Spiel die kompakte Breathless-Schrift. R
 jeden Text, bricht ihn bei Bedarf automatisch auf höchstens zwei ausgewogene Zeilen um und
 verkleinert die Schrift weiter, bis die vollständige Beschriftung in den Button passt. Mit `\n`
 kann das Spiel einen bestimmten Umbruch erzwingen; spielspezifische Sonderfälle sind nicht nötig.
+
+Beschriftungen aus genau einem Zeichen, etwa `A`, `B`, `X`, `Y`, `Z`, `L` oder `R`, zeichnet
+RetroTouch doppelt so groß (Schriftgröße = Radius × 0,68) und ohne die Obergrenze von 16 dp. Der
+Buchstabe wächst und schrumpft mit dem Button, auch im Editor mit `SMALL` / `LARGE`, und sitzt
+optisch genau in der Kreismitte: RetroTouch zentriert die tatsächliche Zeichenfläche, nicht die
+Grundlinie. Längere Beschriftungen wie `START` oder `MENU` bleiben unverändert.
 
 `setDefaultLayout()` bleibt als kompatibler Alias für `setGameplayLayout()` erhalten.
 

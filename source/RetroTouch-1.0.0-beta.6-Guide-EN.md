@@ -1,4 +1,4 @@
-# RetroTouch 1.0.0-beta.5 — integration and usage guide
+# RetroTouch 1.0.0-beta.6 — integration and usage guide
 
 ## 1. What RetroTouch is
 
@@ -40,7 +40,7 @@ The host game provides:
 
 ## 3. Add the AAR
 
-Copy `RetroTouch-1.0.0-beta.5.aar` to:
+Copy `RetroTouch-1.0.0-beta.6.aar` to:
 
 ```text
 app/libs/retrotouch.aar
@@ -110,6 +110,12 @@ Button labels use the compact Breathless font style in every game. RetroTouch me
 automatically wraps it to at most two balanced lines when necessary and reduces the font size until
 the complete text fits inside the button. A host may force the line break with `\n`; no
 game-specific label exceptions are needed.
+
+Labels consisting of exactly one character, such as `A`, `B`, `X`, `Y`, `Z`, `L` or `R`, are drawn
+twice as large (text size = radius × 0.68) and without the 16 dp limit. The letter grows and
+shrinks with the button, including `SMALL` / `LARGE` in the editor, and sits exactly in the middle
+of the circle: RetroTouch centers the glyph's actual ink, not its baseline. Longer labels such as
+`START` or `MENU` are unchanged.
 
 `setDefaultLayout()` remains a compatibility alias for `setGameplayLayout()`.
 
