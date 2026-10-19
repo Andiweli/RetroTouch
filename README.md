@@ -3,7 +3,7 @@
 > A lightweight, configurable and reusable touch-control overlay for Android games.
 
 [![Android API](https://img.shields.io/badge/Android-API%2016--36-3DDC84?logo=android&logoColor=white)](https://developer.android.com/)
-[![Status](https://img.shields.io/badge/Status-1.0.0--beta.4-orange)](#project-status)
+[![Status](https://img.shields.io/badge/Status-1.0.0--beta.5-orange)](#project-status)
 [![Language](https://img.shields.io/badge/Java-8-ED8B00?logo=openjdk&logoColor=white)](https://www.java.com/)
 ![AI](https://img.shields.io/badge/AI-assisted%20coding-6e7781)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -34,6 +34,7 @@ RetroTouch was created for retro FPS ports that need modern Android multitouch c
 - movable, scalable and opacity-adjustable Settings button
 - vertically draggable editor toolbar
 - automatic one- or two-line button labels with dynamic font fitting
+- optional game-defined colors per action, per control or for the whole overlay
 - FPS-friendly simultaneous movement, turning and held FIRE
 - host-controlled latched-button display, suitable for always-run modes
 - public input-reset API for respawn, level changes and engine input resets
@@ -55,9 +56,9 @@ RetroTouch is designed for:
 
 ## Project status
 
-The current release is **RetroTouch 1.0.0-beta.4**.
+The current release is **RetroTouch 1.0.0-beta.5**.
 
-The complete core feature set has been tested with the Android port of **Breathless**, including multitouch movement, relative look, held FIRE while turning, always-run indication, D-pad menu navigation, controller detection and editable layouts. The beta phase continues while RetroTouch is tested across additional engines and input stacks.
+The complete core feature set has been tested with the Android port of **Breathless**, including multitouch movement, relative look, held FIRE while turning, always-run indication, D-pad menu navigation, controller detection and editable layouts. Beta.5 adds optional game-defined colors; games that set no colors look exactly as before. The beta phase continues while RetroTouch is tested across additional engines and input stacks.
 
 ## How RetroTouch is structured
 
@@ -193,6 +194,31 @@ retroTouch.setActionLatched("run", alwaysRunEnabled);
 ```
 
 A latched action is drawn two opacity levels stronger. The game remains responsible for detecting the double tap and applying the run multiplier while movement is active.
+
+## Optional colors
+
+By default all controls use RetroTouch's neutral grey. A game can supply its own colors, for example a green A and a red B button as on a GameCube controller. Like labels, colors come from the game: players cannot change them, and `ALPHA` still controls opacity only.
+
+```java
+// One fill color is enough: pressed color, border and readable text are derived.
+RetroTouchColors green = RetroTouchColors.of(Color.rgb(31, 166, 74));
+RetroTouchColors red = RetroTouchColors.of(Color.rgb(217, 43, 43));
+
+// On the action: every button mapped to "a" or "b" uses these colors.
+retroTouch.registerAction("a", "A", green);
+retroTouch.registerAction("b", "B", red);
+
+// On a single control: the optional last parameter of button(), moveStick() or dPad().
+gameplay.add(RetroTouchControl.moveStick(
+        "move", 0.16f, 0.76f, 0.25f, RetroTouchColors.of(Color.rgb(90, 90, 90))));
+
+// For everything else: one base color for all buttons, sticks and D-pads.
+retroTouch.setDefaultColors(RetroTouchColors.of(Color.rgb(40, 104, 200)));
+```
+
+`RetroTouchColors` holds a fill, pressed, border and text color. `RetroTouchColors.of(fill, pressed, text)` and `new RetroTouchColors(fill, pressed, border, text)` set them explicitly. The most specific setting wins: control, then action, then the default colors, then the built-in grey.
+
+Colors are not stored in saved player layouts. RetroTouch re-applies the game's colors on every load, so existing layouts keep working and pick up color changes from a game update.
 
 ## Layout editor
 

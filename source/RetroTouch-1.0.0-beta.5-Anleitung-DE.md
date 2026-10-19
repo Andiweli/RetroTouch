@@ -1,4 +1,4 @@
-# RetroTouch 1.0.0-beta.4 — Einbau- und Bedienungsanleitung
+# RetroTouch 1.0.0-beta.5 — Einbau- und Bedienungsanleitung
 
 ## 1. Was RetroTouch ist
 
@@ -25,12 +25,14 @@ RetroTouch übernimmt:
 - getrennte Layouts für `GAMEPLAY` und `NAVIGATION`;
 - den Modus `OFF` mit vollständig durchgereichten Touch-Ereignissen;
 - Layout-Editor und Speicherung pro Spiel;
+- optionale, vom Spiel vorgegebene Farben;
 - optionales gleichzeitiges FIRE und LOOK;
 - Erkennung vorhandener Hardware-Controller.
 
 Das Spiel übernimmt:
 
 - verfügbare Aktionen und Beschriftungen;
+- optional die Farben von Buttons, Sticks und Steuerkreuzen;
 - Standardpositionen der Bedienelemente;
 - Zuordnung der Callbacks zu Java, JNI, SDL oder der Engine-Eingabequeue;
 - Auswahl des aktuellen Overlay-Modus;
@@ -39,7 +41,7 @@ Das Spiel übernimmt:
 
 ## 3. AAR einbinden
 
-`RetroTouch-1.0.0-beta.4.aar` hierhin kopieren:
+`RetroTouch-1.0.0-beta.5.aar` hierhin kopieren:
 
 ```text
 app/libs/retrotouch.aar
@@ -115,7 +117,94 @@ kann das Spiel einen bestimmten Umbruch erzwingen; spielspezifische Sonderfälle
 
 `setDefaultLayout()` bleibt als kompatibler Alias für `setGameplayLayout()` erhalten.
 
-## 6. Callbacks mit dem Spiel verbinden
+## 6. Eigene Farben (optional)
+
+Ohne Farbangaben zeichnet RetroTouch alles im bisherigen Grau, Pixel für Pixel wie in beta.4.
+Farben gibt – genau wie die Beschriftung – das Spiel vor. Spieler können sie im Editor nicht
+ändern; `ALPHA` regelt weiterhin nur die Deckkraft.
+
+`RetroTouchColors` fasst vier Farben zusammen:
+
+| Farbe | Button | Steuerkreuz | Bewegungsstick |
+|---|---|---|---|
+| Füllfarbe | Fläche | Felder | Knopf in der Mitte |
+| Farbe beim Drücken | gedrückt oder eingerastet | gedrückte Richtung | Knopf, solange er gehalten wird |
+| Randfarbe | Ring | Rahmen der Felder | äußerer Ring |
+| Schriftfarbe | Beschriftung | Pfeile | `MOVE` |
+
+Die Grundfläche des Sticks zeichnet RetroTouch automatisch als dunkle Variante der Füllfarbe.
+
+```java
+// Nur die Füllfarbe: Farbe beim Drücken, Rand und gut lesbare Schrift werden berechnet.
+RetroTouchColors gruen = RetroTouchColors.of(Color.rgb(31, 166, 74));
+
+// Füllfarbe, Farbe beim Drücken und Schriftfarbe vorgeben; der Rand wird berechnet.
+RetroTouchColors rot = RetroTouchColors.of(
+        Color.rgb(217, 43, 43), Color.rgb(255, 130, 130), Color.WHITE);
+
+// Alle vier Farben vorgeben.
+RetroTouchColors lila = new RetroTouchColors(
+        Color.rgb(106, 79, 193), Color.rgb(170, 150, 235), Color.WHITE, Color.WHITE);
+```
+
+`Color` ist `android.graphics.Color`. Statt `Color.rgb(...)` funktionieren auch
+`Color.parseColor("#1FA64A")` oder `0x1FA64A`. Der Alphakanal einer Farbe wird ignoriert, damit
+die Deckkraft beim Spieler bleibt. Bei nur einer Füllfarbe wählt RetroTouch auf hellen Flächen
+automatisch dunkle Schrift, sonst weiße.
+
+Farben lassen sich an drei Stellen angeben. Die genaueste Angabe gewinnt:
+
+1. **Am Bedienelement** – als letzter, optionaler Parameter von `button(...)`, `moveStick(...)`
+   oder `dPad(...)`:
+
+   ```java
+   gameplay.add(RetroTouchControl.button(
+           "a_button", "a", "A", 0.86f, 0.66f, 0.16f, gruen));
+   gameplay.add(RetroTouchControl.moveStick(
+           "move", 0.16f, 0.76f, 0.25f, RetroTouchColors.of(Color.rgb(90, 90, 90))));
+   ```
+
+2. **An der Aktion** – gilt für jeden Button mit dieser Aktion, auch für Buttons, die der Spieler
+   mit `ADD` anlegt oder mit `ACTION` umbelegt:
+
+   ```java
+   retroTouch.registerAction("a", "A", gruen);
+   retroTouch.registerAction("b", "B", rot);
+   ```
+
+3. **Als Grundfarbe** für alle Buttons, Steuerkreuze und Sticks ohne eigene Farbe:
+
+   ```java
+   retroTouch.setDefaultColors(RetroTouchColors.of(Color.rgb(40, 104, 200)));
+   retroTouch.setDefaultColors(null); // zurück zum eingebauten Grau
+   ```
+
+Rangfolge: Bedienelement → Aktion → Grundfarbe → eingebautes Grau.
+
+Für Buttons empfiehlt sich die Farbe an der Aktion, also dort, wo auch die Beschriftung herkommt.
+Eine Farbe am Bedienelement bleibt dagegen am Bedienelement, auch wenn der Spieler es mit `ACTION`
+auf eine andere Aktion umstellt. Für Sticks und Steuerkreuze gibt es nur die Angabe am
+Bedienelement oder die Grundfarbe.
+
+Farben werden nicht im Benutzerlayout gespeichert. RetroTouch übernimmt sie bei jedem Laden neu
+vom Spiel; Farben am Bedienelement werden über die Control-ID aus dem aktuellen Standardlayout
+zugeordnet. Bereits gespeicherte Layouts bleiben dadurch unverändert gültig, und eine geänderte
+Farbe in einem Spielupdate erscheint sofort auch bei Spielern mit eigenem Layout.
+
+Beispiel für eine GameCube-ähnliche Belegung:
+
+```java
+retroTouch.registerAction("a", "A", RetroTouchColors.of(Color.rgb(31, 166, 74)));
+retroTouch.registerAction("b", "B", RetroTouchColors.of(Color.rgb(217, 43, 43)));
+retroTouch.registerAction("x", "X", RetroTouchColors.of(Color.rgb(208, 208, 208)));
+retroTouch.registerAction("y", "Y", RetroTouchColors.of(Color.rgb(208, 208, 208)));
+retroTouch.registerAction("z", "Z", RetroTouchColors.of(Color.rgb(106, 79, 193)));
+retroTouch.registerAction("start", "Start"); // ohne Farbe: bleibt grau
+```
+
+X und Y erhalten wegen der hellen Fläche automatisch dunkle Schrift.
+
+## 7. Callbacks mit dem Spiel verbinden
 
 Alle Callbacks laufen im Android-UI-Thread:
 
@@ -149,7 +238,7 @@ JNI-Spiele übertragen diese Werte in ihren bestehenden Eingabestatus oder ihre 
 Keine aufwendige native Spiellogik synchron im UI-Thread ausführen. Drücken und Loslassen immer
 behandeln und gehaltene Zustände beim Pausieren der Activity löschen.
 
-## 7. Dauerfeuer beim Drehen
+## 8. Dauerfeuer beim Drehen
 
 Den Mittelpunkt des FIRE-Buttons innerhalb der Look-Fläche platzieren und die Aktion freigeben:
 
@@ -161,7 +250,7 @@ Der gleiche Finger kann FIRE gedrückt halten und durch Ziehen weiterhin relativ
 erzeugen. FIRE wird erst beim Loslassen oder Abbruch deaktiviert. Andere Buttons funktionieren
 normal weiter. Ein zweiter Finger kann gleichzeitig den linken Bewegungsstick bedienen.
 
-## 8. RUN-Doppeltipp und sichtbare Einrastung
+## 9. RUN-Doppeltipp und sichtbare Einrastung
 
 Der RUN-Doppeltipp ist absichtlich eine Regel des jeweiligen Spiels und nicht fest in RetroTouch
 verdrahtet. Im Action-Callback zwei RUN-Tipps innerhalb des gewünschten Zeitfensters erkennen,
@@ -176,7 +265,7 @@ Immer-laufen nur bei ausgelenktem Bewegungsstick anwenden und den Zustand an den
 andere gehaltene Eingaben zurücksetzen, etwa bei Pause, Levelwechsel oder Programmende. Dadurch
 bleibt RetroTouch auch für Spiele mit anderer RUN-Logik universell.
 
-## 9. Optionales Navigations-Overlay
+## 10. Optionales Navigations-Overlay
 
 Spiele mit bereits vorhandener Touch-Menüsteuerung überspringen diesen Abschnitt und verwenden im
 Menü `OFF`. Andernfalls:
@@ -212,7 +301,7 @@ retroTouch.setMode(RetroTouchMode.NAVIGATION); // D-Pad und frei belegbare Butto
 Gameplay- und Navigationslayout werden getrennt gespeichert. Kein Spiel muss alle Modi verwenden.
 Für UT99 empfiehlt sich zunächst `OFF` in den vorhandenen Touch-Menüs und `GAMEPLAY` im Level.
 
-## 10. Hardware-Controller
+## 11. Hardware-Controller
 
 Soll RetroTouch nur ohne vorhandenen Controller sichtbar sein:
 
@@ -236,7 +325,7 @@ Bedienelemente sowie Xbox-, PlayStation-, USB-, Bluetooth- und generische Contro
 RetroTouch drei Sekunden ausgeblendet. Bei strikter Erkennung nach Controller-Verfügbarkeit sollte
 dies mit `setAutoHideOnController(false)` abgeschaltet werden, damit es nur eine klare Regel gibt.
 
-## 11. Layout-Editor und Bedienung
+## 12. Layout-Editor und Bedienung
 
 Das Settings-Symbol öffnet den Editor. Ein Element auswählen und anschließend:
 
@@ -263,7 +352,7 @@ Standardpositionen, bis sie erneut gespeichert werden.
 Die große Look-Fläche ist nur im Editiermodus sichtbar. Die Layouts liegen in den privaten
 App-Einstellungen und bleiben nach einem Neustart erhalten.
 
-## 12. Activity-Lebenszyklus
+## 13. Activity-Lebenszyklus
 
 Empfohlenes Verhalten des Spiels:
 
@@ -292,7 +381,7 @@ am selben Punkt ebenfalls löschen.
 
 `releaseAllInputs()` ist ein gleichwertiger, sprechender Alias.
 
-## 13. RetroTouch aktualisieren
+## 14. RetroTouch aktualisieren
 
 Bei API-kompatiblen Updates:
 
@@ -305,7 +394,7 @@ Die AAR wird in APK/AAB einkompiliert und kann nicht in einer bereits installier
 ausgetauscht werden. Quellcode-Anpassungen im Spiel sind nur nötig, wenn das Changelog ausdrücklich
 eine inkompatible API-Änderung ankündigt.
 
-## 14. Testliste
+## 15. Testliste
 
 Auf einem echten Touchgerät prüfen:
 
@@ -323,8 +412,10 @@ Auf einem echten Touchgerät prüfen:
 12. Mindestens eine 4:3-, eine 16:9- und eine breite/Automotive-Auflösung testen.
 13. Respawn oder Engine-Input-Reset bei gehaltenen Bedienelementen auslösen; der nächste Touch muss
     als vollständig neue, kontinuierliche Eingabe beginnen und keine Aktion darf hängen bleiben.
+14. Falls Farben verwendet werden: Sie erscheinen auch mit einem bereits gespeicherten Layout,
+    gedrückte Buttons wechseln zur Farbe beim Drücken und `ALPHA` ändert weiterhin nur die Deckkraft.
 
-## 15. Fehlerdiagnose
+## 16. Fehlerdiagnose
 
 - **Overlay nicht sichtbar:** Modus, Controller-Erkennung, `setOverlayEnabled`, Reihenfolge im
   `FrameLayout` und registriertes Gameplay-Layout prüfen.
@@ -340,10 +431,13 @@ Auf einem echten Touchgerät prüfen:
   RetroTouch-Action-Callback verarbeiten.
 - **Eingaben hängen nach Pause:** Spielseitige Zustände bei Pause/Abbruch löschen und nicht nur auf
   ein späteres Finger-Up vertrauen.
+- **Farbe erscheint nicht:** Rangfolge prüfen (Bedienelement → Aktion → Grundfarbe). Eine Farbe am
+  Bedienelement gilt nur für dessen Control-ID im Standardlayout; mit `ADD` angelegte Buttons
+  erhalten die Farbe ihrer Aktion oder die Grundfarbe.
 - **Altes Benutzerlayout verdeckt neue Standardbuttons:** Während der Entwicklung eine neue
   Layout-Spiel-ID verwenden oder im Editor `RESET` wählen.
 
-## 16. Empfohlener erster Unreal-/UT99-Einbau
+## 17. Empfohlener erster Unreal-/UT99-Einbau
 
 Mit der kleinsten sinnvollen Integration beginnen:
 

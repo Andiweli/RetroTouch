@@ -1,4 +1,4 @@
-# RetroTouch 1.0.0-beta.4 — integration and usage guide
+# RetroTouch 1.0.0-beta.5 — integration and usage guide
 
 ## 1. What RetroTouch is
 
@@ -24,12 +24,14 @@ RetroTouch provides:
 - independent `GAMEPLAY` and `NAVIGATION` layouts;
 - `OFF` mode with touch pass-through;
 - a built-in editor and per-game saved layouts;
+- optional host-defined colors;
 - optional FIRE-and-LOOK behavior;
 - controller-presence detection.
 
 The host game provides:
 
 - the list of supported actions and their labels;
+- optionally the colors of buttons, sticks and D-pads;
 - default control positions;
 - callback mapping to Java, JNI, SDL or the engine's input queue;
 - the current overlay mode;
@@ -38,7 +40,7 @@ The host game provides:
 
 ## 3. Add the AAR
 
-Copy `RetroTouch-1.0.0-beta.4.aar` to:
+Copy `RetroTouch-1.0.0-beta.5.aar` to:
 
 ```text
 app/libs/retrotouch.aar
@@ -111,7 +113,92 @@ game-specific label exceptions are needed.
 
 `setDefaultLayout()` remains a compatibility alias for `setGameplayLayout()`.
 
-## 6. Map callbacks to the game
+## 6. Custom colors (optional)
+
+Without colors, RetroTouch draws everything in its familiar grey, pixel for pixel as in beta.4.
+Colors come from the host game, exactly like labels. Players cannot change them in the editor;
+`ALPHA` still controls opacity only.
+
+`RetroTouchColors` combines four colors:
+
+| Color | Button | D-pad | Move stick |
+|---|---|---|---|
+| fill | face | cells | center knob |
+| pressed | pressed or latched | pressed direction | knob while held |
+| border | ring | cell outlines | outer ring |
+| text | label | arrows | `MOVE` |
+
+RetroTouch draws the stick's base as a dark tint of the fill color.
+
+```java
+// Fill color only: pressed color, border and readable text are derived.
+RetroTouchColors green = RetroTouchColors.of(Color.rgb(31, 166, 74));
+
+// Fill, pressed and text color; the border is derived.
+RetroTouchColors red = RetroTouchColors.of(
+        Color.rgb(217, 43, 43), Color.rgb(255, 130, 130), Color.WHITE);
+
+// All four colors.
+RetroTouchColors purple = new RetroTouchColors(
+        Color.rgb(106, 79, 193), Color.rgb(170, 150, 235), Color.WHITE, Color.WHITE);
+```
+
+`Color` is `android.graphics.Color`. `Color.parseColor("#1FA64A")` or `0x1FA64A` work as well. The
+alpha channel of a color is ignored so that opacity stays under the player's control. With a
+single fill color, RetroTouch picks dark text on light fills and white text otherwise.
+
+Colors can be given in three places. The most specific one wins:
+
+1. **On the control** – as the last, optional parameter of `button(...)`, `moveStick(...)` or
+   `dPad(...)`:
+
+   ```java
+   gameplay.add(RetroTouchControl.button(
+           "a_button", "a", "A", 0.86f, 0.66f, 0.16f, green));
+   gameplay.add(RetroTouchControl.moveStick(
+           "move", 0.16f, 0.76f, 0.25f, RetroTouchColors.of(Color.rgb(90, 90, 90))));
+   ```
+
+2. **On the action** – applies to every button mapped to that action, including buttons the
+   player adds with `ADD` or remaps with `ACTION`:
+
+   ```java
+   retroTouch.registerAction("a", "A", green);
+   retroTouch.registerAction("b", "B", red);
+   ```
+
+3. **As the default** for every button, D-pad and stick without colors of its own:
+
+   ```java
+   retroTouch.setDefaultColors(RetroTouchColors.of(Color.rgb(40, 104, 200)));
+   retroTouch.setDefaultColors(null); // back to the built-in grey
+   ```
+
+Precedence: control → action → default → built-in grey.
+
+For buttons, prefer action colors, the same place the label comes from. A color on the control
+stays with the control even when the player remaps it to another action with `ACTION`. Sticks and
+D-pads take colors from the control or the default.
+
+Colors are not stored in the player's saved layout. RetroTouch re-applies them from the game on
+every load; control colors are matched by control ID from the current default layout. Existing
+saved layouts therefore keep working unchanged, and a color change in a game update shows up
+immediately, even for players with a customized layout.
+
+Example of a GameCube-like setup:
+
+```java
+retroTouch.registerAction("a", "A", RetroTouchColors.of(Color.rgb(31, 166, 74)));
+retroTouch.registerAction("b", "B", RetroTouchColors.of(Color.rgb(217, 43, 43)));
+retroTouch.registerAction("x", "X", RetroTouchColors.of(Color.rgb(208, 208, 208)));
+retroTouch.registerAction("y", "Y", RetroTouchColors.of(Color.rgb(208, 208, 208)));
+retroTouch.registerAction("z", "Z", RetroTouchColors.of(Color.rgb(106, 79, 193)));
+retroTouch.registerAction("start", "Start"); // no colors: stays grey
+```
+
+X and Y automatically get dark text because their fill is light.
+
+## 7. Map callbacks to the game
 
 All callbacks run on Android's UI thread:
 
@@ -144,7 +231,7 @@ JNI games should transfer these values into their existing input state or event 
 heavy native work synchronously on the UI thread. Always handle both press and release, and clear
 held native states when the Activity pauses.
 
-## 7. FIRE while turning
+## 8. FIRE while turning
 
 Place the FIRE button's center inside the look zone and enable its action:
 
@@ -156,7 +243,7 @@ The same finger can now press FIRE and continue producing relative look motion w
 FIRE. FIRE becomes inactive only when that finger is lifted or cancelled. Other buttons keep their
 normal behavior. Movement can simultaneously come from another finger on the left stick.
 
-## 8. RUN double-tap and latched display
+## 9. RUN double-tap and latched display
 
 RUN double-tap is deliberately a host-game rule, not hard-coded library behavior. In the action
 callback, detect two RUN presses within the chosen interval, toggle the run state and update the
@@ -171,7 +258,7 @@ while the movement stick is non-zero and reset it at the same points as other he
 (pause, level transition or shutdown). This keeps RetroTouch usable by games whose RUN semantics
 differ from Breathless.
 
-## 9. Optional navigation overlay
+## 10. Optional navigation overlay
 
 Games with their own touch-capable menus can skip this section and use `OFF` in menus. Otherwise:
 
@@ -206,7 +293,7 @@ Gameplay and navigation layouts are saved independently. A game is not required 
 For UT99, the expected first integration is `OFF` in its existing touch menus and `GAMEPLAY` in a
 level.
 
-## 10. Physical controllers
+## 11. Physical controllers
 
 To show touch controls only when no controller is available:
 
@@ -228,7 +315,7 @@ without vendor lists.
 three seconds after a controller event. If strict presence-based suppression is used, disable this
 additional behavior with `setAutoHideOnController(false)` to keep the policy unambiguous.
 
-## 11. Editor and player usage
+## 12. Editor and player usage
 
 The settings icon opens the editor. Select a control and use:
 
@@ -253,7 +340,7 @@ use the previous default editor positions until saved again.
 The large look area is shown only in edit mode. Saved layouts are private app preferences; they
 remain available after restarting the game.
 
-## 12. Activity lifecycle
+## 13. Activity lifecycle
 
 Recommended host behavior:
 
@@ -280,7 +367,7 @@ toggle such as Breathless always-run, clear that game-owned variable at the same
 
 `releaseAllInputs()` is an equivalent descriptive alias.
 
-## 13. Updating RetroTouch
+## 14. Updating RetroTouch
 
 For API-compatible updates:
 
@@ -292,7 +379,7 @@ For API-compatible updates:
 The AAR is compiled into the APK/AAB and cannot be replaced inside an already installed app.
 Source updates are only needed when the changelog explicitly announces a breaking API migration.
 
-## 14. Test checklist
+## 15. Test checklist
 
 Test on a real touch device:
 
@@ -310,8 +397,10 @@ Test on a real touch device:
 12. Test at least one 4:3, one 16:9 and one wide/Automotive resolution.
 13. Trigger respawn or an engine input reset while controls are held; verify that the next touch
     starts a fresh continuous input and no action remains stuck.
+14. If colors are used: they appear with an already saved layout too, pressed buttons switch to
+    the pressed color and `ALPHA` still changes opacity only.
 
-## 15. Troubleshooting
+## 16. Troubleshooting
 
 - **Overlay is not visible:** check the current mode, controller detection, `setOverlayEnabled`,
   child order in the `FrameLayout`, and whether a gameplay layout was registered.
@@ -327,10 +416,13 @@ Test on a real touch device:
   RetroTouch action callback.
 - **Controls remain held after pause:** clear game-side input on pause/cancel; never depend only on
   a later finger-up event.
+- **A color does not appear:** check the precedence (control → action → default). A control color
+  applies only to that control ID in the default layout; buttons added with `ADD` use their action's
+  color or the default.
 - **Old custom layout hides new default controls:** use a new layout game ID during development or
   choose `RESET` in the editor.
 
-## 16. Recommended Unreal/UT99 first pass
+## 17. Recommended Unreal/UT99 first pass
 
 Start with the narrowest integration:
 
