@@ -16,8 +16,9 @@ The overlay is delivered as a replaceable Android Archive (`.aar`) and is suitab
 
 RetroTouch was created for retro FPS ports that need modern Android multitouch controls without hard-coding a different overlay into every game.
 
-<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/ca590585-8451-4f00-bddb-244ef07e0c3b" />
-<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/d1d895b4-6f10-4eb6-b3f6-f6b210013eb1" />
+<img width="1536" height="864" alt="image" src="https://github.com/user-attachments/assets/4ca08bab-cddf-4aa9-8c40-598676343f4a" />
+<img width="1536" height="864" alt="image" src="https://github.com/user-attachments/assets/ca590585-8451-4f00-bddb-244ef07e0c3b" />
+<img width="1536" height="864" alt="image" src="https://github.com/user-attachments/assets/d1d895b4-6f10-4eb6-b3f6-f6b210013eb1" />
 
 
 ## Key features
