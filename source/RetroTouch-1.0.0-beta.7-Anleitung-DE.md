@@ -1,4 +1,4 @@
-# RetroTouch 1.0.0-beta.6 — Einbau- und Bedienungsanleitung
+# RetroTouch 1.0.0-beta.7 — Einbau- und Bedienungsanleitung
 
 ## 1. Was RetroTouch ist
 
@@ -26,6 +26,7 @@ RetroTouch übernimmt:
 - den Modus `OFF` mit vollständig durchgereichten Touch-Ereignissen;
 - Layout-Editor und Speicherung pro Spiel;
 - optionale, vom Spiel vorgegebene Farben;
+- einen optionalen zweiten Analogstick mit eigener Rückmeldung;
 - optionales gleichzeitiges FIRE und LOOK;
 - Erkennung vorhandener Hardware-Controller.
 
@@ -41,7 +42,7 @@ Das Spiel übernimmt:
 
 ## 3. AAR einbinden
 
-`RetroTouch-1.0.0-beta.6.aar` hierhin kopieren:
+`RetroTouch-1.0.0-beta.7.aar` hierhin kopieren:
 
 ```text
 app/libs/retrotouch.aar
@@ -210,7 +211,59 @@ retroTouch.registerAction("start", "Start"); // ohne Farbe: bleibt grau
 
 X und Y erhalten wegen der hellen Fläche automatisch dunkle Schrift.
 
-## 7. Callbacks mit dem Spiel verbinden
+## 7. Zweiter Analogstick (optional)
+
+Der Bewegungsstick meldet sich wie bisher über `onMove`. Braucht ein Spiel einen zweiten,
+eigenständigen Stick, etwa den C-Stick eines GameCube-Controllers, registriert es eine
+**Stick-Aktion**:
+
+```java
+retroTouch.registerStickAction("c_stick", "C", RetroTouchColors.of(Color.rgb(245, 200, 0)));
+```
+
+Im Standardlayout legt das Spiel den Stick als Button mit dieser Aktion an; RetroTouch macht daraus
+automatisch einen Stick. Farben am Bedienelement bleiben erhalten.
+
+```java
+gameplay.add(RetroTouchControl.button("c_stick", "c_stick", "C", 0.80f, 0.70f, 0.20f));
+```
+
+Der Stick meldet seine Auslenkung über `RetroTouchStickListener.onStick(actionId, x, y)`: Werte von
+`-1.0` bis `1.0`, y nach unten, beim Loslassen `0, 0`. Der Listener implementiert dafür zusätzlich
+`RetroTouchStickListener`. Eine anonyme Klasse `new RetroTouchAdapter() { ... }` kann das nicht,
+deshalb eine benannte Klasse verwenden:
+
+```java
+final class TouchBridge extends RetroTouchAdapter implements RetroTouchStickListener {
+    @Override public void onMove(float x, float y) {
+        nativeTouchMove(x, y);
+    }
+
+    @Override public void onStick(String actionId, float x, float y) {
+        if ("c_stick".equals(actionId)) nativeTouchCStick(x, y);
+    }
+}
+
+retroTouch.setListener(new TouchBridge());
+```
+
+Weitere Regeln:
+
+- Ein Stick zeigt seine Beschriftung; ein einzelner Buchstabe steht groß auf dem Knopf.
+- Im Editor wird ein Button zum Stick, wenn der Spieler mit `ACTION` die Stick-Aktion wählt;
+  weiteres `ACTION` macht ihn wieder zum Button.
+- Ein Layout hat höchstens zwei Sticks (Bewegungsstick mitgezählt) und 16 Buttons. `ACTION`
+  überspringt, was diese Grenzen sprengen würde. Ein Button, der wegen der Grenze kein Stick
+  werden kann, bleibt ohne Funktion.
+- Stick-Aktionen kommen nie über `onAction`. Mit `ADD` angelegte Buttons erhalten die erste
+  normale Aktion.
+- `isStickAction(id)` sagt, ob eine Aktion eine Stick-Aktion ist. `registerAction(id, ...)` macht
+  eine Stick-Aktion wieder zu einer normalen Aktion. `registerActions(...)` ersetzt alle Aktionen
+  und entfernt dabei auch alle Stick-Aktionen.
+- `resetInputState()` meldet für jede Stick-Aktion `0, 0`.
+- Listener ohne `RetroTouchStickListener` erhalten von diesen Sticks nichts.
+
+## 8. Callbacks mit dem Spiel verbinden
 
 Alle Callbacks laufen im Android-UI-Thread:
 
@@ -244,7 +297,7 @@ JNI-Spiele übertragen diese Werte in ihren bestehenden Eingabestatus oder ihre 
 Keine aufwendige native Spiellogik synchron im UI-Thread ausführen. Drücken und Loslassen immer
 behandeln und gehaltene Zustände beim Pausieren der Activity löschen.
 
-## 8. Dauerfeuer beim Drehen
+## 9. Dauerfeuer beim Drehen
 
 Den Mittelpunkt des FIRE-Buttons innerhalb der Look-Fläche platzieren und die Aktion freigeben:
 
@@ -256,7 +309,7 @@ Der gleiche Finger kann FIRE gedrückt halten und durch Ziehen weiterhin relativ
 erzeugen. FIRE wird erst beim Loslassen oder Abbruch deaktiviert. Andere Buttons funktionieren
 normal weiter. Ein zweiter Finger kann gleichzeitig den linken Bewegungsstick bedienen.
 
-## 9. RUN-Doppeltipp und sichtbare Einrastung
+## 10. RUN-Doppeltipp und sichtbare Einrastung
 
 Der RUN-Doppeltipp ist absichtlich eine Regel des jeweiligen Spiels und nicht fest in RetroTouch
 verdrahtet. Im Action-Callback zwei RUN-Tipps innerhalb des gewünschten Zeitfensters erkennen,
@@ -271,7 +324,7 @@ Immer-laufen nur bei ausgelenktem Bewegungsstick anwenden und den Zustand an den
 andere gehaltene Eingaben zurücksetzen, etwa bei Pause, Levelwechsel oder Programmende. Dadurch
 bleibt RetroTouch auch für Spiele mit anderer RUN-Logik universell.
 
-## 10. Optionales Navigations-Overlay
+## 11. Optionales Navigations-Overlay
 
 Spiele mit bereits vorhandener Touch-Menüsteuerung überspringen diesen Abschnitt und verwenden im
 Menü `OFF`. Andernfalls:
@@ -307,7 +360,7 @@ retroTouch.setMode(RetroTouchMode.NAVIGATION); // D-Pad und frei belegbare Butto
 Gameplay- und Navigationslayout werden getrennt gespeichert. Kein Spiel muss alle Modi verwenden.
 Für UT99 empfiehlt sich zunächst `OFF` in den vorhandenen Touch-Menüs und `GAMEPLAY` im Level.
 
-## 11. Hardware-Controller
+## 12. Hardware-Controller
 
 Soll RetroTouch nur ohne vorhandenen Controller sichtbar sein:
 
@@ -331,7 +384,7 @@ Bedienelemente sowie Xbox-, PlayStation-, USB-, Bluetooth- und generische Contro
 RetroTouch drei Sekunden ausgeblendet. Bei strikter Erkennung nach Controller-Verfügbarkeit sollte
 dies mit `setAutoHideOnController(false)` abgeschaltet werden, damit es nur eine klare Regel gibt.
 
-## 12. Layout-Editor und Bedienung
+## 13. Layout-Editor und Bedienung
 
 Das Settings-Symbol öffnet den Editor. Ein Element auswählen und anschließend:
 
@@ -358,7 +411,7 @@ Standardpositionen, bis sie erneut gespeichert werden.
 Die große Look-Fläche ist nur im Editiermodus sichtbar. Die Layouts liegen in den privaten
 App-Einstellungen und bleiben nach einem Neustart erhalten.
 
-## 13. Activity-Lebenszyklus
+## 14. Activity-Lebenszyklus
 
 Empfohlenes Verhalten des Spiels:
 
@@ -387,7 +440,7 @@ am selben Punkt ebenfalls löschen.
 
 `releaseAllInputs()` ist ein gleichwertiger, sprechender Alias.
 
-## 14. RetroTouch aktualisieren
+## 15. RetroTouch aktualisieren
 
 Bei API-kompatiblen Updates:
 
@@ -400,7 +453,7 @@ Die AAR wird in APK/AAB einkompiliert und kann nicht in einer bereits installier
 ausgetauscht werden. Quellcode-Anpassungen im Spiel sind nur nötig, wenn das Changelog ausdrücklich
 eine inkompatible API-Änderung ankündigt.
 
-## 15. Testliste
+## 16. Testliste
 
 Auf einem echten Touchgerät prüfen:
 
@@ -420,8 +473,10 @@ Auf einem echten Touchgerät prüfen:
     als vollständig neue, kontinuierliche Eingabe beginnen und keine Aktion darf hängen bleiben.
 14. Falls Farben verwendet werden: Sie erscheinen auch mit einem bereits gespeicherten Layout,
     gedrückte Buttons wechseln zur Farbe beim Drücken und `ALPHA` ändert weiterhin nur die Deckkraft.
+15. Falls ein zweiter Stick verwendet wird: Bewegungsstick und zweiten Stick gleichzeitig bedienen;
+    beide melden getrennt, und beim Loslassen kommt `0, 0`.
 
-## 16. Fehlerdiagnose
+## 17. Fehlerdiagnose
 
 - **Overlay nicht sichtbar:** Modus, Controller-Erkennung, `setOverlayEnabled`, Reihenfolge im
   `FrameLayout` und registriertes Gameplay-Layout prüfen.
@@ -443,7 +498,7 @@ Auf einem echten Touchgerät prüfen:
 - **Altes Benutzerlayout verdeckt neue Standardbuttons:** Während der Entwicklung eine neue
   Layout-Spiel-ID verwenden oder im Editor `RESET` wählen.
 
-## 17. Empfohlener erster Unreal-/UT99-Einbau
+## 18. Empfohlener erster Unreal-/UT99-Einbau
 
 Mit der kleinsten sinnvollen Integration beginnen:
 

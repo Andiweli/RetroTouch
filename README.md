@@ -3,7 +3,7 @@
 > A lightweight, configurable and reusable touch-control overlay for Android games.
 
 [![Android API](https://img.shields.io/badge/Android-API%2016--36-3DDC84?logo=android&logoColor=white)](https://developer.android.com/)
-[![Status](https://img.shields.io/badge/Status-1.0.0--beta.6-orange)](#project-status)
+[![Status](https://img.shields.io/badge/Status-1.0.0--beta.7-orange)](#project-status)
 [![Language](https://img.shields.io/badge/Java-8-ED8B00?logo=openjdk&logoColor=white)](https://www.java.com/)
 ![AI](https://img.shields.io/badge/AI-assisted%20coding-6e7781)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -38,6 +38,7 @@ RetroTouch was created for retro FPS ports that need modern Android multitouch c
 - automatic one- or two-line button labels with dynamic font fitting
 - large, centered one-character labels such as `A` or `B` that scale with the button
 - optional game-defined colors per action, per control or for the whole overlay
+- optional second analog stick, for example a GameCube C-stick, that reports separately
 - FPS-friendly simultaneous movement, turning and held FIRE
 - host-controlled latched-button display, suitable for always-run modes
 - public input-reset API for respawn, level changes and engine input resets
@@ -59,9 +60,9 @@ RetroTouch is designed for:
 
 ## Project status
 
-The current release is **RetroTouch 1.0.0-beta.6**.
+The current release is **RetroTouch 1.0.0-beta.7**.
 
-The complete core feature set has been tested with the Android port of **Breathless**, including multitouch movement, relative look, held FIRE while turning, always-run indication, D-pad menu navigation, controller detection and editable layouts. Beta.5 adds optional game-defined colors; games that set no colors look exactly as before. Beta.6 draws one-character labels such as `A` or `B` twice as large, scaled with the button and centered in the circle. The beta phase continues while RetroTouch is tested across additional engines and input stacks.
+The complete core feature set has been tested with the Android port of **Breathless**, including multitouch movement, relative look, held FIRE while turning, always-run indication, D-pad menu navigation, controller detection and editable layouts. Beta.5 adds optional game-defined colors; games that set no colors look exactly as before. Beta.6 draws one-character labels such as `A` or `B` twice as large, scaled with the button and centered in the circle. Beta.7 adds an optional second analog stick that reports separately from the move stick. The beta phase continues while RetroTouch is tested across additional engines and input stacks.
 
 ## How RetroTouch is structured
 
@@ -222,6 +223,37 @@ retroTouch.setDefaultColors(RetroTouchColors.of(Color.rgb(40, 104, 200)));
 `RetroTouchColors` holds a fill, pressed, border and text color. `RetroTouchColors.of(fill, pressed, text)` and `new RetroTouchColors(fill, pressed, border, text)` set them explicitly. The most specific setting wins: control, then action, then the default colors, then the built-in grey.
 
 Colors are not stored in saved player layouts. RetroTouch re-applies the game's colors on every load, so existing layouts keep working and pick up color changes from a game update.
+
+## Optional second analog stick
+
+The move stick reports through `onMove`. A game that needs a second, independent stick, such as the C-stick of a GameCube controller, registers a stick action. In the default layout it adds a button with that action, and RetroTouch turns it into a stick automatically:
+
+```java
+retroTouch.registerStickAction("c_stick", "C", RetroTouchColors.of(Color.rgb(245, 200, 0)));
+
+gameplay.add(RetroTouchControl.button(
+        "c_stick", "c_stick", "C", 0.80f, 0.70f, 0.20f));
+```
+
+The stick reports through `RetroTouchStickListener.onStick(actionId, x, y)` with values from `-1.0` to `1.0`, y pointing down, and `0, 0` on release. The listener implements this interface next to `RetroTouchListener`, so it must be a named class:
+
+```java
+final class TouchBridge extends RetroTouchAdapter implements RetroTouchStickListener {
+    @Override
+    public void onMove(float x, float y) {
+        nativeTouchMove(x, y);
+    }
+
+    @Override
+    public void onStick(String actionId, float x, float y) {
+        if ("c_stick".equals(actionId)) nativeTouchCStick(x, y);
+    }
+}
+
+retroTouch.setListener(new TouchBridge());
+```
+
+In the editor, `ACTION` turns a button into a stick and back. A layout holds at most two sticks, including the move stick, and 16 buttons. Stick actions never arrive through `onAction`.
 
 ## Layout editor
 

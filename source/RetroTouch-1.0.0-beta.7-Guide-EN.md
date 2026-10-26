@@ -1,4 +1,4 @@
-# RetroTouch 1.0.0-beta.6 — integration and usage guide
+# RetroTouch 1.0.0-beta.7 — integration and usage guide
 
 ## 1. What RetroTouch is
 
@@ -25,6 +25,7 @@ RetroTouch provides:
 - `OFF` mode with touch pass-through;
 - a built-in editor and per-game saved layouts;
 - optional host-defined colors;
+- an optional second analog stick that reports separately;
 - optional FIRE-and-LOOK behavior;
 - controller-presence detection.
 
@@ -40,7 +41,7 @@ The host game provides:
 
 ## 3. Add the AAR
 
-Copy `RetroTouch-1.0.0-beta.6.aar` to:
+Copy `RetroTouch-1.0.0-beta.7.aar` to:
 
 ```text
 app/libs/retrotouch.aar
@@ -204,7 +205,57 @@ retroTouch.registerAction("start", "Start"); // no colors: stays grey
 
 X and Y automatically get dark text because their fill is light.
 
-## 7. Map callbacks to the game
+## 7. Second analog stick (optional)
+
+The move stick keeps reporting through `onMove`. For a second, independent stick, such as a
+GameCube C-stick, register a **stick action**:
+
+```java
+retroTouch.registerStickAction("c_stick", "C", RetroTouchColors.of(Color.rgb(245, 200, 0)));
+```
+
+In its default layout the game adds the stick as a button with that action; RetroTouch turns it
+into a stick automatically. Per-control colors stay with it.
+
+```java
+gameplay.add(RetroTouchControl.button("c_stick", "c_stick", "C", 0.80f, 0.70f, 0.20f));
+```
+
+The stick reports through `RetroTouchStickListener.onStick(actionId, x, y)`: values from `-1.0` to
+`1.0`, y down, and `0, 0` on release. The listener implements `RetroTouchStickListener` as well. An
+anonymous `new RetroTouchAdapter() { ... }` cannot do that, so use a named class:
+
+```java
+final class TouchBridge extends RetroTouchAdapter implements RetroTouchStickListener {
+    @Override public void onMove(float x, float y) {
+        nativeTouchMove(x, y);
+    }
+
+    @Override public void onStick(String actionId, float x, float y) {
+        if ("c_stick".equals(actionId)) nativeTouchCStick(x, y);
+    }
+}
+
+retroTouch.setListener(new TouchBridge());
+```
+
+Further rules:
+
+- A stick shows its label; a single letter is drawn large on the knob.
+- In the editor, a button becomes a stick when the player selects the stick action with `ACTION`;
+  pressing `ACTION` again turns it back into a button.
+- A layout holds at most two sticks, including the move stick, and 16 buttons. `ACTION` skips
+  anything that would exceed these limits. A button that cannot become a stick because of the limit
+  stays inactive.
+- Stick actions never arrive through `onAction`. Buttons added with `ADD` get the first ordinary
+  action.
+- `isStickAction(id)` tells whether an action is a stick action. `registerAction(id, ...)` turns a
+  stick action back into an ordinary action. `registerActions(...)` replaces all actions and also
+  removes all stick actions.
+- `resetInputState()` reports `0, 0` for every stick action.
+- Listeners without `RetroTouchStickListener` receive nothing from these sticks.
+
+## 8. Map callbacks to the game
 
 All callbacks run on Android's UI thread:
 
@@ -237,7 +288,7 @@ JNI games should transfer these values into their existing input state or event 
 heavy native work synchronously on the UI thread. Always handle both press and release, and clear
 held native states when the Activity pauses.
 
-## 8. FIRE while turning
+## 9. FIRE while turning
 
 Place the FIRE button's center inside the look zone and enable its action:
 
@@ -249,7 +300,7 @@ The same finger can now press FIRE and continue producing relative look motion w
 FIRE. FIRE becomes inactive only when that finger is lifted or cancelled. Other buttons keep their
 normal behavior. Movement can simultaneously come from another finger on the left stick.
 
-## 9. RUN double-tap and latched display
+## 10. RUN double-tap and latched display
 
 RUN double-tap is deliberately a host-game rule, not hard-coded library behavior. In the action
 callback, detect two RUN presses within the chosen interval, toggle the run state and update the
@@ -264,7 +315,7 @@ while the movement stick is non-zero and reset it at the same points as other he
 (pause, level transition or shutdown). This keeps RetroTouch usable by games whose RUN semantics
 differ from Breathless.
 
-## 10. Optional navigation overlay
+## 11. Optional navigation overlay
 
 Games with their own touch-capable menus can skip this section and use `OFF` in menus. Otherwise:
 
@@ -299,7 +350,7 @@ Gameplay and navigation layouts are saved independently. A game is not required 
 For UT99, the expected first integration is `OFF` in its existing touch menus and `GAMEPLAY` in a
 level.
 
-## 11. Physical controllers
+## 12. Physical controllers
 
 To show touch controls only when no controller is available:
 
@@ -321,7 +372,7 @@ without vendor lists.
 three seconds after a controller event. If strict presence-based suppression is used, disable this
 additional behavior with `setAutoHideOnController(false)` to keep the policy unambiguous.
 
-## 12. Editor and player usage
+## 13. Editor and player usage
 
 The settings icon opens the editor. Select a control and use:
 
@@ -346,7 +397,7 @@ use the previous default editor positions until saved again.
 The large look area is shown only in edit mode. Saved layouts are private app preferences; they
 remain available after restarting the game.
 
-## 13. Activity lifecycle
+## 14. Activity lifecycle
 
 Recommended host behavior:
 
@@ -373,7 +424,7 @@ toggle such as Breathless always-run, clear that game-owned variable at the same
 
 `releaseAllInputs()` is an equivalent descriptive alias.
 
-## 14. Updating RetroTouch
+## 15. Updating RetroTouch
 
 For API-compatible updates:
 
@@ -385,7 +436,7 @@ For API-compatible updates:
 The AAR is compiled into the APK/AAB and cannot be replaced inside an already installed app.
 Source updates are only needed when the changelog explicitly announces a breaking API migration.
 
-## 15. Test checklist
+## 16. Test checklist
 
 Test on a real touch device:
 
@@ -405,8 +456,10 @@ Test on a real touch device:
     starts a fresh continuous input and no action remains stuck.
 14. If colors are used: they appear with an already saved layout too, pressed buttons switch to
     the pressed color and `ALPHA` still changes opacity only.
+15. If a second stick is used: operate the move stick and the second stick at the same time; both
+    report separately, and releasing reports `0, 0`.
 
-## 16. Troubleshooting
+## 17. Troubleshooting
 
 - **Overlay is not visible:** check the current mode, controller detection, `setOverlayEnabled`,
   child order in the `FrameLayout`, and whether a gameplay layout was registered.
@@ -428,7 +481,7 @@ Test on a real touch device:
 - **Old custom layout hides new default controls:** use a new layout game ID during development or
   choose `RESET` in the editor.
 
-## 17. Recommended Unreal/UT99 first pass
+## 18. Recommended Unreal/UT99 first pass
 
 Start with the narrowest integration:
 
