@@ -3,7 +3,7 @@
 > A lightweight, configurable and reusable touch-control overlay for Android games.
 
 [![Android API](https://img.shields.io/badge/Android-API%2016--36-3DDC84?logo=android&logoColor=white)](https://developer.android.com/)
-[![Status](https://img.shields.io/badge/Status-1.0.0--beta.7-orange)](#project-status)
+[![Status](https://img.shields.io/badge/Status-1.0.0--beta.8-orange)](#project-status)
 [![Language](https://img.shields.io/badge/Java-8-ED8B00?logo=openjdk&logoColor=white)](https://www.java.com/)
 ![AI](https://img.shields.io/badge/AI-assisted%20coding-6e7781)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -37,6 +37,7 @@ RetroTouch was created for retro FPS ports that need modern Android multitouch c
 - vertically draggable editor toolbar
 - automatic one- or two-line button labels with dynamic font fitting
 - large, centered one-character labels such as `A` or `B` that scale with the button
+- rectangle buttons with slightly rounded corners for START, SELECT, MENU, shoulders and triggers
 - optional game-defined colors per action, per control or for the whole overlay
 - optional second analog stick, for example a GameCube C-stick, that reports separately
 - FPS-friendly simultaneous movement, turning and held FIRE
@@ -60,9 +61,9 @@ RetroTouch is designed for:
 
 ## Project status
 
-The current release is **RetroTouch 1.0.0-beta.7**.
+The current release is **RetroTouch 1.0.0-beta.8**.
 
-The complete core feature set has been tested with the Android port of **Breathless**, including multitouch movement, relative look, held FIRE while turning, always-run indication, D-pad menu navigation, controller detection and editable layouts. Beta.5 adds optional game-defined colors; games that set no colors look exactly as before. Beta.6 draws one-character labels such as `A` or `B` twice as large, scaled with the button and centered in the circle. Beta.7 adds an optional second analog stick that reports separately from the move stick. The beta phase continues while RetroTouch is tested across additional engines and input stacks.
+The complete core feature set has been tested with the Android port of **Breathless**, including multitouch movement, relative look, held FIRE while turning, always-run indication, D-pad menu navigation, controller detection and editable layouts. Beta.5 adds optional game-defined colors; games that set no colors look exactly as before. Beta.6 draws one-character labels such as `A` or `B` twice as large, scaled with the button and centered in the circle. Beta.7 adds an optional second analog stick that reports separately from the move stick. Beta.8 draws START, SELECT, MENU, shoulder and trigger buttons as rectangles and lets games color the button border separately. The beta phase continues while RetroTouch is tested across additional engines and input stacks.
 
 ## How RetroTouch is structured
 
@@ -222,7 +223,27 @@ retroTouch.setDefaultColors(RetroTouchColors.of(Color.rgb(40, 104, 200)));
 
 `RetroTouchColors` holds a fill, pressed, border and text color. `RetroTouchColors.of(fill, pressed, text)` and `new RetroTouchColors(fill, pressed, border, text)` set them explicitly. The most specific setting wins: control, then action, then the default colors, then the built-in grey.
 
+To color only the border (ring) of a button, use `RetroTouchColors.of(fill).withBorderColor(color)`.
+
 Colors are not stored in saved player layouts. RetroTouch re-applies the game's colors on every load, so existing layouts keep working and pick up color changes from a game update.
+
+## Button shapes
+
+RetroTouch chooses a button's shape from its label, so existing games get it with the new AAR alone:
+
+| Label | Shape |
+|---|---|
+| `START`, `SELECT`, `MENU` | compact rectangle |
+| `L`, `R`, `ZL`, `ZR`, `L1`, `R1`, `L2`, `R2`, `LB`, `RB`, `LT`, `RT` | slightly larger rectangle |
+| everything else | round |
+
+Rectangles have slightly rounded corners. A game can choose the shape per action, for example a rectangular GameCube `Z` button:
+
+```java
+retroTouch.setButtonShape("z", RetroTouchButtonShape.SHOULDER); // RECTANGLE, ROUND, AUTO
+```
+
+In the editor, the selection frame fits the visible control: a square around round buttons, sticks and D-pads, and the rectangle around rectangle buttons.
 
 ## Optional second analog stick
 

@@ -1,4 +1,4 @@
-# RetroTouch 1.0.0-beta.7 — integration and usage guide
+# RetroTouch 1.0.0-beta.8 — integration and usage guide
 
 ## 1. What RetroTouch is
 
@@ -41,7 +41,7 @@ The host game provides:
 
 ## 3. Add the AAR
 
-Copy `RetroTouch-1.0.0-beta.7.aar` to:
+Copy `RetroTouch-1.0.0-beta.8.aar` to:
 
 ```text
 app/libs/retrotouch.aar
@@ -116,7 +116,24 @@ Labels consisting of exactly one character, such as `A`, `B`, `X`, `Y`, `Z`, `L`
 twice as large (text size = radius × 0.68) and without the 16 dp limit. The letter grows and
 shrinks with the button, including `SMALL` / `LARGE` in the editor, and sits exactly in the middle
 of the circle: RetroTouch centers the glyph's actual ink, not its baseline. Longer labels such as
-`START` or `MENU` are unchanged.
+`FIRE` or `OK` are unchanged.
+
+Since beta.8, RetroTouch chooses a button's shape from its label:
+
+| Label | Shape |
+|---|---|
+| `START`, `SELECT`, `MENU` | compact rectangle (1.2 × 0.6 of the diameter of a round button of the same size) |
+| `L`, `R`, `ZL`, `ZR`, `L1`, `R1`, `L2`, `R2`, `LB`, `RB`, `LT`, `RT` | slightly larger rectangle (1.5 × 0.75) |
+| everything else | round, as before |
+
+Rectangles have slightly rounded corners and are touched on their area plus a small margin. Letter
+case does not matter. A game can choose the shape per action, for example a rectangular GameCube
+`Z` button:
+
+```java
+retroTouch.setButtonShape("z", RetroTouchButtonShape.SHOULDER);  // RECTANGLE, ROUND
+retroTouch.setButtonShape("z", RetroTouchButtonShape.AUTO);      // automatic again
+```
 
 `setDefaultLayout()` remains a compatibility alias for `setGameplayLayout()`.
 
@@ -204,6 +221,13 @@ retroTouch.registerAction("start", "Start"); // no colors: stays grey
 ```
 
 X and Y automatically get dark text because their fill is light.
+
+To color only the border (ring) and keep the other colors:
+
+```java
+retroTouch.registerAction("a", "A",
+        RetroTouchColors.of(Color.rgb(31, 166, 74)).withBorderColor(Color.rgb(255, 215, 0)));
+```
 
 ## 7. Second analog stick (optional)
 
@@ -387,6 +411,9 @@ The settings icon opens the editor. Select a control and use:
 Controls can be dragged directly. The settings button can also be selected and moved, resized with
 `SMALL` / `LARGE`, and adjusted with `ALPHA`. It is the permanent editor entry point, so it cannot
 be removed: while settings is selected, `DELETE` is visibly disabled and has no effect.
+
+The white selection frame fits the visible control: a square around round buttons, sticks and
+D-pads, and the rectangle around rectangle buttons.
 
 The strip has a `↕ DRAG` handle above its tools. Drag that handle up or down whenever the strip
 covers a touch control. `SAVE` stores the settings-button position, size and opacity plus the

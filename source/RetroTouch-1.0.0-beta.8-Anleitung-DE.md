@@ -1,4 +1,4 @@
-# RetroTouch 1.0.0-beta.7 — Einbau- und Bedienungsanleitung
+# RetroTouch 1.0.0-beta.8 — Einbau- und Bedienungsanleitung
 
 ## 1. Was RetroTouch ist
 
@@ -42,7 +42,7 @@ Das Spiel übernimmt:
 
 ## 3. AAR einbinden
 
-`RetroTouch-1.0.0-beta.7.aar` hierhin kopieren:
+`RetroTouch-1.0.0-beta.8.aar` hierhin kopieren:
 
 ```text
 app/libs/retrotouch.aar
@@ -120,7 +120,24 @@ Beschriftungen aus genau einem Zeichen, etwa `A`, `B`, `X`, `Y`, `Z`, `L` oder `
 RetroTouch doppelt so groß (Schriftgröße = Radius × 0,68) und ohne die Obergrenze von 16 dp. Der
 Buchstabe wächst und schrumpft mit dem Button, auch im Editor mit `SMALL` / `LARGE`, und sitzt
 optisch genau in der Kreismitte: RetroTouch zentriert die tatsächliche Zeichenfläche, nicht die
-Grundlinie. Längere Beschriftungen wie `START` oder `MENU` bleiben unverändert.
+Grundlinie. Längere Beschriftungen wie `FIRE` oder `OK` bleiben unverändert.
+
+Seit beta.8 wählt RetroTouch die Form eines Buttons automatisch nach seiner Beschriftung:
+
+| Beschriftung | Form |
+|---|---|
+| `START`, `SELECT`, `MENU` | kompaktes Rechteck (1,2 × 0,6 des Durchmessers eines runden Buttons gleicher Größe) |
+| `L`, `R`, `ZL`, `ZR`, `L1`, `R1`, `L2`, `R2`, `LB`, `RB`, `LT`, `RT` | etwas größeres Rechteck (1,5 × 0,75) |
+| alle anderen | rund wie bisher |
+
+Rechtecke haben leicht abgerundete Ecken und werden auf ihrer Fläche plus einem kleinen Rand
+getroffen. Groß- und Kleinschreibung spielt keine Rolle. Das Spiel kann die Form pro Aktion selbst
+festlegen, etwa für einen rechteckigen GameCube-`Z`-Button:
+
+```java
+retroTouch.setButtonShape("z", RetroTouchButtonShape.SHOULDER);  // RECTANGLE, ROUND
+retroTouch.setButtonShape("z", RetroTouchButtonShape.AUTO);      // wieder automatisch
+```
 
 `setDefaultLayout()` bleibt als kompatibler Alias für `setGameplayLayout()` erhalten.
 
@@ -210,6 +227,13 @@ retroTouch.registerAction("start", "Start"); // ohne Farbe: bleibt grau
 ```
 
 X und Y erhalten wegen der hellen Fläche automatisch dunkle Schrift.
+
+Nur den Rand (Ring) anders einfärben, die übrigen Farben bleiben:
+
+```java
+retroTouch.registerAction("a", "A",
+        RetroTouchColors.of(Color.rgb(31, 166, 74)).withBorderColor(Color.rgb(255, 215, 0)));
+```
 
 ## 7. Zweiter Analogstick (optional)
 
@@ -400,6 +424,9 @@ Elemente lassen sich direkt verschieben. Auch der Settings-Button kann ausgewäh
 mit `SMALL` / `LARGE` skaliert und über `ALPHA` transparenter oder sichtbarer gemacht werden. Er
 ist der dauerhafte Zugang zum Editor und kann deshalb nicht gelöscht werden: Bei ausgewähltem
 Settings-Button ist `DELETE` sichtbar deaktiviert und ohne Funktion.
+
+Der weiße Auswahlrahmen liegt eng um das sichtbare Element: quadratisch um runde Buttons, Sticks
+und Steuerkreuze, rechteckig um rechteckige Buttons.
 
 Die Leiste besitzt oberhalb der Werkzeuge einen mit `↕ DRAG` beschrifteten Griff. Diesen Griff
 nach oben oder unten ziehen, wenn die Leiste ein Touch-Element verdeckt. `SAVE` speichert Position,
