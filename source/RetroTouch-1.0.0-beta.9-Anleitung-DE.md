@@ -1,4 +1,4 @@
-# RetroTouch 1.0.0-beta.8 — Einbau- und Bedienungsanleitung
+# RetroTouch 1.0.0-beta.9 — Einbau- und Bedienungsanleitung
 
 ## 1. Was RetroTouch ist
 
@@ -42,7 +42,7 @@ Das Spiel übernimmt:
 
 ## 3. AAR einbinden
 
-`RetroTouch-1.0.0-beta.8.aar` hierhin kopieren:
+`RetroTouch-1.0.0-beta.9.aar` hierhin kopieren:
 
 ```text
 app/libs/retrotouch.aar
@@ -426,7 +426,11 @@ ist der dauerhafte Zugang zum Editor und kann deshalb nicht gelöscht werden: Be
 Settings-Button ist `DELETE` sichtbar deaktiviert und ohne Funktion.
 
 Der weiße Auswahlrahmen liegt eng um das sichtbare Element: quadratisch um runde Buttons, Sticks
-und Steuerkreuze, rechteckig um rechteckige Buttons.
+und Steuerkreuze, rechteckig um rechteckige Buttons. Jedes Element lässt sich bis an jeden
+Bildschirmrand schieben, auch nach `SMALL` / `LARGE`.
+
+Der Knopf eines Sticks läuft mit seiner Mitte auf dem Ring; am Ring ist die volle Auslenkung
+erreicht.
 
 Die Leiste besitzt oberhalb der Werkzeuge einen mit `↕ DRAG` beschrifteten Griff. Diesen Griff
 nach oben oder unten ziehen, wenn die Leiste ein Touch-Element verdeckt. `SAVE` speichert Position,

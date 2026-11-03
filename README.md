@@ -3,7 +3,7 @@
 > A lightweight, configurable and reusable touch-control overlay for Android games.
 
 [![Android API](https://img.shields.io/badge/Android-API%2016--36-3DDC84?logo=android&logoColor=white)](https://developer.android.com/)
-[![Status](https://img.shields.io/badge/Status-1.0.0--beta.8-orange)](#project-status)
+[![Status](https://img.shields.io/badge/Status-1.0.0--beta.9-orange)](#project-status)
 [![Language](https://img.shields.io/badge/Java-8-ED8B00?logo=openjdk&logoColor=white)](https://www.java.com/)
 ![AI](https://img.shields.io/badge/AI-assisted%20coding-6e7781)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -61,9 +61,9 @@ RetroTouch is designed for:
 
 ## Project status
 
-The current release is **RetroTouch 1.0.0-beta.8**.
+The current release is **RetroTouch 1.0.0-beta.9**.
 
-The complete core feature set has been tested with the Android port of **Breathless**, including multitouch movement, relative look, held FIRE while turning, always-run indication, D-pad menu navigation, controller detection and editable layouts. Beta.5 adds optional game-defined colors; games that set no colors look exactly as before. Beta.6 draws one-character labels such as `A` or `B` twice as large, scaled with the button and centered in the circle. Beta.7 adds an optional second analog stick that reports separately from the move stick. Beta.8 draws START, SELECT, MENU, shoulder and trigger buttons as rectangles and lets games color the button border separately. The beta phase continues while RetroTouch is tested across additional engines and input stacks.
+The complete core feature set has been tested with the Android port of **Breathless**, including multitouch movement, relative look, held FIRE while turning, always-run indication, D-pad menu navigation, controller detection and editable layouts. Beta.5 adds optional game-defined colors; games that set no colors look exactly as before. Beta.6 draws one-character labels such as `A` or `B` twice as large, scaled with the button and centered in the circle. Beta.7 adds an optional second analog stick that reports separately from the move stick. Beta.8 draws START, SELECT, MENU, shoulder and trigger buttons as rectangles and lets games color the button border separately. Beta.9 lets every control be dragged to the screen edges, draws slightly thicker borders and lets stick knobs run along the ring. The beta phase continues while RetroTouch is tested across additional engines and input stacks.
 
 ## How RetroTouch is structured
 
@@ -243,7 +243,7 @@ Rectangles have slightly rounded corners. A game can choose the shape per action
 retroTouch.setButtonShape("z", RetroTouchButtonShape.SHOULDER); // RECTANGLE, ROUND, AUTO
 ```
 
-In the editor, the selection frame fits the visible control: a square around round buttons, sticks and D-pads, and the rectangle around rectangle buttons.
+In the editor, the selection frame fits the visible control: a square around round buttons, sticks and D-pads, and the rectangle around rectangle buttons. Every control can be dragged right up to each screen edge.
 
 ## Optional second analog stick
 

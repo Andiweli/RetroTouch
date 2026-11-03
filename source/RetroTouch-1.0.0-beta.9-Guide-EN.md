@@ -1,4 +1,4 @@
-# RetroTouch 1.0.0-beta.8 — integration and usage guide
+# RetroTouch 1.0.0-beta.9 — integration and usage guide
 
 ## 1. What RetroTouch is
 
@@ -41,7 +41,7 @@ The host game provides:
 
 ## 3. Add the AAR
 
-Copy `RetroTouch-1.0.0-beta.8.aar` to:
+Copy `RetroTouch-1.0.0-beta.9.aar` to:
 
 ```text
 app/libs/retrotouch.aar
@@ -413,7 +413,10 @@ Controls can be dragged directly. The settings button can also be selected and m
 be removed: while settings is selected, `DELETE` is visibly disabled and has no effect.
 
 The white selection frame fits the visible control: a square around round buttons, sticks and
-D-pads, and the rectangle around rectangle buttons.
+D-pads, and the rectangle around rectangle buttons. Every control can be dragged to each screen
+edge, also after `SMALL` / `LARGE`.
+
+A stick's knob runs with its center along the ring; full deflection is reached at the ring.
 
 The strip has a `↕ DRAG` handle above its tools. Drag that handle up or down whenever the strip
 covers a touch control. `SAVE` stores the settings-button position, size and opacity plus the
