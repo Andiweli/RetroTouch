@@ -3,7 +3,7 @@
 > A lightweight, configurable and reusable touch-control overlay for Android games.
 
 [![Android API](https://img.shields.io/badge/Android-API%2016--36-3DDC84?logo=android&logoColor=white)](https://developer.android.com/)
-[![Status](https://img.shields.io/badge/Status-1.0.0--beta.9-orange)](#project-status)
+[![Status](https://img.shields.io/badge/Status-1.0.0--beta.10-orange)](#project-status)
 [![Language](https://img.shields.io/badge/Java-8-ED8B00?logo=openjdk&logoColor=white)](https://www.java.com/)
 ![AI](https://img.shields.io/badge/AI-assisted%20coding-6e7781)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -43,6 +43,7 @@ RetroTouch was created for retro FPS ports that need modern Android multitouch c
 - large, centered one-character labels such as `A` or `B` that scale with the button
 - rectangle buttons with slightly rounded corners for START, SELECT, MENU, shoulders and triggers
 - optional game-defined colors per action, per control or for the whole overlay, including the border
+- optional icon style with 14 built-in icons, rounded-rectangle and capsule shapes and a style toggle for the player
 
 **Modes and layouts**
 - independent `OFF`, `GAMEPLAY` and optional `NAVIGATION` modes
@@ -76,10 +77,11 @@ RetroTouch is designed for:
 
 ## Project status
 
-The current release is **RetroTouch 1.0.0-beta.9**.
+The current release is **RetroTouch 1.0.0-beta.10**.
 
 | Version | Date | Highlights |
 |---|---|---|
+| beta.10 | 2026-11-09 | Optional icon style with style toggle in the editor, new shapes, state colors |
 | beta.9 | 2026-11-03 | Controls reach every screen edge, thicker borders, stick knobs run along the ring |
 | beta.8 | 2026-11-03 | Rectangle buttons for START, SELECT, MENU, shoulders and triggers; border colors; fitted editor frame |
 | beta.7 | 2026-10-26 | Optional second analog stick that reports separately (`onStick`) |
@@ -90,7 +92,7 @@ The current release is **RetroTouch 1.0.0-beta.9**.
 | beta.2 | 2026-08-27 | Universal one- or two-line button labels |
 | beta.1 | 2026-08-27 | First public beta with the complete core feature set |
 
-The complete core feature set has been tested with the Android port of **Breathless**, including multitouch movement, relative look, held FIRE while turning, always-run indication, D-pad menu navigation, controller detection and editable layouts. The additions of beta.5 to beta.9 are covered by automated rendering tests against the released AAR. The beta phase continues while RetroTouch is tested across additional engines and input stacks.
+The complete core feature set has been tested with the Android port of **Breathless**, including multitouch movement, relative look, held FIRE while turning, always-run indication, D-pad menu navigation, controller detection and editable layouts. The additions of beta.5 to beta.10 are covered by automated rendering tests against the released AAR. The beta phase continues while RetroTouch is tested across additional engines and input stacks.
 
 ## How RetroTouch is structured
 
@@ -98,7 +100,7 @@ RetroTouch intentionally separates reusable overlay code from game-specific inpu
 
 1. **`retrotouch.aar`** — reusable RetroTouch library
 2. **game bridge** — maps RetroTouch callbacks to the game's input system
-3. **game layout** — defines available actions, labels, default positions and, optionally, colors and button shapes
+3. **game layout** — defines available actions, labels, default positions and, optionally, colors, button shapes and icons
 
 With this structure, a compatible RetroTouch update normally requires only replacing `app/libs/retrotouch.aar` and rebuilding the APK or AAB. The game bridge and native engine code remain unchanged.
 
@@ -106,7 +108,7 @@ The AAR is compiled into the final application. It cannot be exchanged inside an
 
 ## Installation with the AAR
 
-The current AAR is in this repository as [`source/RetroTouch-1.0.0-beta.9.aar`](source/RetroTouch-1.0.0-beta.9.aar). Copy it into the application module as:
+The current AAR is in this repository as [`source/RetroTouch-1.0.0-beta.10.aar`](source/RetroTouch-1.0.0-beta.10.aar). Copy it into the application module as:
 
 ```text
 app/libs/retrotouch.aar
@@ -122,7 +124,7 @@ dependencies {
 
 Do not also copy RetroTouch Java sources into the app module. Keeping the library behind the AAR boundary makes future updates predictable.
 
-The `source/` folder also contains the complete source package (`RetroTouch-1.0.0-beta.9-source.zip`) and detailed integration guides in [English](source/RetroTouch-1.0.0-beta.9-Guide-EN.md) and [German](source/RetroTouch-1.0.0-beta.9-Anleitung-DE.md).
+The `source/` folder also contains the complete source package (`RetroTouch-1.0.0-beta.10-source.zip`) and detailed integration guides in [English](source/RetroTouch-1.0.0-beta.10-Guide-EN.md) and [German](source/RetroTouch-1.0.0-beta.10-Anleitung-DE.md).
 
 ## Minimal integration
 
@@ -227,6 +229,64 @@ Rectangles have slightly rounded corners and are touched on their whole area. A 
 retroTouch.setButtonShape("z", RetroTouchButtonShape.SHOULDER); // RECTANGLE, ROUND, AUTO
 ```
 
+## Icon style
+
+Besides text labels (`LABELS`), RetroTouch can draw buttons with icons (`ICONS`): a stroke icon
+in the button's text color, a thicker border (7 % of the smaller side) and, for latched buttons, a
+golden border with an outer ring. A game that sets nothing keeps exactly the beta.9 look, and the
+editor shows no style toggle.
+
+```java
+// Offer both styles: the editor then shows a style toggle for the player.
+retroTouch.setAvailableButtonStyles(RetroTouchButtonStyle.LABELS, RetroTouchButtonStyle.ICONS);
+retroTouch.setDefaultButtonStyle(RetroTouchButtonStyle.ICONS);   // until the player chooses
+retroTouch.setStyleToggleLabels("Labels", "Icons");               // optional, translated by the game
+
+// Actions with icons; an action without an icon keeps its label in both styles.
+retroTouch.registerAction("a", "A", null, RetroTouchIcon.HAND);
+retroTouch.registerAction("l", "L", null, RetroTouchIcon.KNIFE_HORIZONTAL);
+retroTouch.setActionIcon("l", RetroTouchIcon.CROSSHAIR);          // e.g. for alternate controls
+
+// Shapes with an aspect ratio (width / height); the size is the height.
+gameplay.add(RetroTouchControl.button("btn_l", "l", "L", 0.10f, 0.16f, 0.12f,
+        null, RetroTouchButtonShape.ROUNDED_RECT, 1.95f));
+gameplay.add(RetroTouchControl.button("btn_start", "start", "Start", 0.44f, 0.90f, 0.085f,
+        null, RetroTouchButtonShape.CAPSULE, 2.1f));
+
+// Colors for normal, pressed and latched buttons (pressed and latched are derived if omitted).
+retroTouch.setDefaultColors(new RetroTouchColors(
+        Color.rgb(46, 43, 37), Color.rgb(74, 67, 56), Color.rgb(181, 139, 85), Color.rgb(240, 223, 184))
+        .withPressedColors(Color.rgb(74, 67, 56), Color.rgb(217, 168, 106), Color.rgb(255, 241, 208))
+        .withLatchedColors(Color.rgb(58, 51, 38), Color.rgb(232, 192, 122), Color.rgb(255, 241, 208)));
+
+// Read or set the style, e.g. from the game's own menu; the choice is saved per game.
+RetroTouchButtonStyle style = retroTouch.getButtonStyle();
+retroTouch.setButtonStyle(RetroTouchButtonStyle.LABELS);
+retroTouch.setStyleListener(new RetroTouchStyleListener() {
+    @Override public void onButtonStyleChanged(RetroTouchButtonStyle newStyle) {
+        // the player switched in the editor: update the game's own menu setting
+    }
+});
+```
+
+- **Built-in icons:** `HAND`, `FOOTPRINTS`, `USER`, `BRIEFCASE`, `MAP`, `KNIFE_HORIZONTAL`,
+  `CROSSHAIR`, `CARTRIDGE_HORIZONTAL`, `CIRCLE_PAUSE`, `MENU`, `CHEVRON_UP`, `CHEVRON_DOWN`,
+  `CHEVRON_LEFT`, `CHEVRON_RIGHT`. Own icons: `RetroTouchIcon.fromPaths(24, "M4 6h16", ...)` with
+  SVG path data; `withScale(1.2f)` draws one larger. Lucide license: `THIRD_PARTY_NOTICES.md`.
+- **Icon size:** 55 % of a circle's diameter, 61 % of a rectangle's height (at most 80 % of its
+  width), times the icon's extra scale.
+- **Shapes:** `ROUND`, `RECTANGLE`, `SHOULDER`, `ROUNDED_RECT` (corners 35 % of the height) and
+  `CAPSULE` (half circles). They apply in both styles and are touched on their shape.
+- **Choice:** the player's style is saved privately per game, separate from the layouts. `RESET`
+  does not change it. A saved style that the game no longer offers falls back to the default.
+  The style toggle is not a control and is never saved in a layout.
+- **Owned by the game:** icons, shapes, aspect ratios and colors come from the game on every load
+  and are not stored in saved layouts. A remapped button shows the new action's icon.
+- **ICONS look:** the D-pad is a cross with chevrons; sticks and the look zone show no labels.
+  The border is drawn inside the button, so switching styles moves or resizes nothing; only the
+  latched ring reaches past the button and may be cut off at a screen edge.
+- `RetroTouchColors.withBorderWidth(0.05f)` sets another border width for the `ICONS` style.
+
 ## Optional colors
 
 By default all controls use RetroTouch's neutral grey. A game can supply its own colors, for example a green A and a red B button as on a GameCube controller. Like labels, colors come from the game: players cannot change them, and `ALPHA` still controls opacity only.
@@ -321,6 +381,7 @@ The Settings button opens the in-game editor. Players can:
 - delete ordinary controls (`DELETE`)
 - reset the current layout (`RESET`)
 - save the current gameplay or navigation layout (`SAVE`)
+- switch the button style (`Labels` / `Icons`) when the game offers both
 
 The white selection frame fits the visible control: a square around round buttons, sticks and D-pads, and the rectangle around rectangle buttons. The Settings button itself can be selected, moved, resized and adjusted with `ALPHA`, but cannot be deleted. The editor toolbar can be dragged vertically when it covers another control. All settings are stored privately per game/layout ID.
 
@@ -362,8 +423,11 @@ The call releases held actions, sends neutral movement for the move stick and ev
 | `RetroTouchAction` | An action ID with its label and optional colors |
 | `RetroTouchListener` / `RetroTouchAdapter` | Callbacks: `onAction`, `onMove`, `onLook`, `onEditorStateChanged` |
 | `RetroTouchStickListener` | Optional callback for second analog sticks: `onStick` (beta.7) |
-| `RetroTouchColors` | Fill, pressed, border and text colors (beta.5, `withBorderColor` since beta.8) |
-| `RetroTouchButtonShape` | `AUTO`, `ROUND`, `RECTANGLE`, `SHOULDER` (beta.8) |
+| `RetroTouchColors` | Fill, pressed, border and text colors (beta.5); `withBorderColor` (beta.8); pressed, latched colors and border width for icons (beta.10) |
+| `RetroTouchButtonShape` | `AUTO`, `ROUND`, `RECTANGLE`, `SHOULDER` (beta.8), `ROUNDED_RECT`, `CAPSULE` (beta.10) |
+| `RetroTouchButtonStyle` | `LABELS`, `ICONS` (beta.10) |
+| `RetroTouchIcon` | Built-in icons and `fromPaths` for own SVG path data (beta.10) |
+| `RetroTouchStyleListener` | Optional callback when the player switches the style: `onButtonStyleChanged` (beta.10) |
 | `RetroTouchMode` | `OFF`, `GAMEPLAY`, `NAVIGATION` |
 | `RetroTouchNavigation` | Stable D-pad action IDs `nav_up`, `nav_down`, `nav_left`, `nav_right` |
 | `RetroTouchControllers` | `isControllerConnected()` |
@@ -419,7 +483,7 @@ This separation is important because MobileTouchControls is licensed under GPLv2
 
 ## License
 
-RetroTouch is released under the [MIT License](LICENSE).
+RetroTouch is released under the [MIT License](LICENSE). The built-in icons are based on [Lucide](https://lucide.dev) (ISC License); see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 [![Support via PayPal](https://img.shields.io/badge/Support%20via-PayPal-0070BA?logo=paypal&logoColor=white)](https://paypal.me/andiweli)
 
