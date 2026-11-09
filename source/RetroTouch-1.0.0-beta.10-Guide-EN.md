@@ -1,4 +1,4 @@
-# RetroTouch 1.0.0-beta.9 — integration and usage guide
+# RetroTouch 1.0.0-beta.10 — integration and usage guide
 
 ## 1. What RetroTouch is
 
@@ -41,7 +41,7 @@ The host game provides:
 
 ## 3. Add the AAR
 
-Copy `RetroTouch-1.0.0-beta.9.aar` to:
+Copy `RetroTouch-1.0.0-beta.10.aar` to:
 
 ```text
 app/libs/retrotouch.aar
@@ -279,7 +279,65 @@ Further rules:
 - `resetInputState()` reports `0, 0` for every stick action.
 - Listeners without `RetroTouchStickListener` receive nothing from these sticks.
 
-## 8. Map callbacks to the game
+## 8. Icon style (optional)
+
+Besides text labels (`LABELS`), RetroTouch can draw buttons with icons (`ICONS`): a stroke icon
+in the button's text color, a thicker border (7 % of the smaller side) and, for latched buttons, a
+golden border with an outer ring. A game that sets nothing keeps exactly the beta.9 look, and the
+editor shows no style toggle.
+
+```java
+// Offer both styles: the editor then shows a style toggle for the player.
+retroTouch.setAvailableButtonStyles(RetroTouchButtonStyle.LABELS, RetroTouchButtonStyle.ICONS);
+retroTouch.setDefaultButtonStyle(RetroTouchButtonStyle.ICONS);   // until the player chooses
+retroTouch.setStyleToggleLabels("Labels", "Icons");               // optional, translated by the game
+
+// Actions with icons; an action without an icon keeps its label in both styles.
+retroTouch.registerAction("a", "A", null, RetroTouchIcon.HAND);
+retroTouch.registerAction("l", "L", null, RetroTouchIcon.KNIFE_HORIZONTAL);
+retroTouch.setActionIcon("l", RetroTouchIcon.CROSSHAIR);          // e.g. for alternate controls
+
+// Shapes with an aspect ratio (width / height); the size is the height.
+gameplay.add(RetroTouchControl.button("btn_l", "l", "L", 0.10f, 0.16f, 0.12f,
+        null, RetroTouchButtonShape.ROUNDED_RECT, 1.95f));
+gameplay.add(RetroTouchControl.button("btn_start", "start", "Start", 0.44f, 0.90f, 0.085f,
+        null, RetroTouchButtonShape.CAPSULE, 2.1f));
+
+// Colors for normal, pressed and latched buttons (pressed and latched are derived if omitted).
+retroTouch.setDefaultColors(new RetroTouchColors(
+        Color.rgb(46, 43, 37), Color.rgb(74, 67, 56), Color.rgb(181, 139, 85), Color.rgb(240, 223, 184))
+        .withPressedColors(Color.rgb(74, 67, 56), Color.rgb(217, 168, 106), Color.rgb(255, 241, 208))
+        .withLatchedColors(Color.rgb(58, 51, 38), Color.rgb(232, 192, 122), Color.rgb(255, 241, 208)));
+
+// Read or set the style, e.g. from the game's own menu; the choice is saved per game.
+RetroTouchButtonStyle style = retroTouch.getButtonStyle();
+retroTouch.setButtonStyle(RetroTouchButtonStyle.LABELS);
+retroTouch.setStyleListener(new RetroTouchStyleListener() {
+    @Override public void onButtonStyleChanged(RetroTouchButtonStyle newStyle) {
+        // the player switched in the editor: update the game's own menu setting
+    }
+});
+```
+
+- **Built-in icons:** `HAND`, `FOOTPRINTS`, `USER`, `BRIEFCASE`, `MAP`, `KNIFE_HORIZONTAL`,
+  `CROSSHAIR`, `CARTRIDGE_HORIZONTAL`, `CIRCLE_PAUSE`, `MENU`, `CHEVRON_UP`, `CHEVRON_DOWN`,
+  `CHEVRON_LEFT`, `CHEVRON_RIGHT`. Own icons: `RetroTouchIcon.fromPaths(24, "M4 6h16", ...)` with
+  SVG path data; `withScale(1.2f)` draws one larger. Lucide license: `THIRD_PARTY_NOTICES.md`.
+- **Icon size:** 55 % of a circle's diameter, 61 % of a rectangle's height (at most 80 % of its
+  width), times the icon's extra scale.
+- **Shapes:** `ROUND`, `RECTANGLE`, `SHOULDER`, `ROUNDED_RECT` (corners 35 % of the height) and
+  `CAPSULE` (half circles). They apply in both styles and are touched on their shape.
+- **Choice:** the player's style is saved privately per game, separate from the layouts. `RESET`
+  does not change it. A saved style that the game no longer offers falls back to the default.
+  The style toggle is not a control and is never saved in a layout.
+- **Owned by the game:** icons, shapes, aspect ratios and colors come from the game on every load
+  and are not stored in saved layouts. A remapped button shows the new action's icon.
+- **ICONS look:** the D-pad is a cross with chevrons; sticks and the look zone show no labels.
+  The border is drawn inside the button, so switching styles moves or resizes nothing; only the
+  latched ring reaches past the button and may be cut off at a screen edge.
+- `RetroTouchColors.withBorderWidth(0.05f)` sets another border width for the `ICONS` style.
+
+## 9. Map callbacks to the game
 
 All callbacks run on Android's UI thread:
 
@@ -312,7 +370,7 @@ JNI games should transfer these values into their existing input state or event 
 heavy native work synchronously on the UI thread. Always handle both press and release, and clear
 held native states when the Activity pauses.
 
-## 9. FIRE while turning
+## 10. FIRE while turning
 
 Place the FIRE button's center inside the look zone and enable its action:
 
@@ -324,7 +382,7 @@ The same finger can now press FIRE and continue producing relative look motion w
 FIRE. FIRE becomes inactive only when that finger is lifted or cancelled. Other buttons keep their
 normal behavior. Movement can simultaneously come from another finger on the left stick.
 
-## 10. RUN double-tap and latched display
+## 11. RUN double-tap and latched display
 
 RUN double-tap is deliberately a host-game rule, not hard-coded library behavior. In the action
 callback, detect two RUN presses within the chosen interval, toggle the run state and update the
@@ -339,7 +397,7 @@ while the movement stick is non-zero and reset it at the same points as other he
 (pause, level transition or shutdown). This keeps RetroTouch usable by games whose RUN semantics
 differ from Breathless.
 
-## 11. Optional navigation overlay
+## 12. Optional navigation overlay
 
 Games with their own touch-capable menus can skip this section and use `OFF` in menus. Otherwise:
 
@@ -374,7 +432,7 @@ Gameplay and navigation layouts are saved independently. A game is not required 
 For UT99, the expected first integration is `OFF` in its existing touch menus and `GAMEPLAY` in a
 level.
 
-## 12. Physical controllers
+## 13. Physical controllers
 
 To show touch controls only when no controller is available:
 
@@ -396,7 +454,7 @@ without vendor lists.
 three seconds after a controller event. If strict presence-based suppression is used, disable this
 additional behavior with `setAutoHideOnController(false)` to keep the policy unambiguous.
 
-## 13. Editor and player usage
+## 14. Editor and player usage
 
 The settings icon opens the editor. Select a control and use:
 
@@ -427,7 +485,7 @@ use the previous default editor positions until saved again.
 The large look area is shown only in edit mode. Saved layouts are private app preferences; they
 remain available after restarting the game.
 
-## 14. Activity lifecycle
+## 15. Activity lifecycle
 
 Recommended host behavior:
 
@@ -454,7 +512,7 @@ toggle such as Breathless always-run, clear that game-owned variable at the same
 
 `releaseAllInputs()` is an equivalent descriptive alias.
 
-## 15. Updating RetroTouch
+## 16. Updating RetroTouch
 
 For API-compatible updates:
 
@@ -466,7 +524,7 @@ For API-compatible updates:
 The AAR is compiled into the APK/AAB and cannot be replaced inside an already installed app.
 Source updates are only needed when the changelog explicitly announces a breaking API migration.
 
-## 16. Test checklist
+## 17. Test checklist
 
 Test on a real touch device:
 
@@ -489,7 +547,7 @@ Test on a real touch device:
 15. If a second stick is used: operate the move stick and the second stick at the same time; both
     report separately, and releasing reports `0, 0`.
 
-## 17. Troubleshooting
+## 18. Troubleshooting
 
 - **Overlay is not visible:** check the current mode, controller detection, `setOverlayEnabled`,
   child order in the `FrameLayout`, and whether a gameplay layout was registered.
@@ -511,7 +569,7 @@ Test on a real touch device:
 - **Old custom layout hides new default controls:** use a new layout game ID during development or
   choose `RESET` in the editor.
 
-## 18. Recommended Unreal/UT99 first pass
+## 19. Recommended Unreal/UT99 first pass
 
 Start with the narrowest integration:
 

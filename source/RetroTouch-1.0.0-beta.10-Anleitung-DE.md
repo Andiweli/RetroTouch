@@ -1,4 +1,4 @@
-# RetroTouch 1.0.0-beta.9 — Einbau- und Bedienungsanleitung
+# RetroTouch 1.0.0-beta.10 — Einbau- und Bedienungsanleitung
 
 ## 1. Was RetroTouch ist
 
@@ -42,7 +42,7 @@ Das Spiel übernimmt:
 
 ## 3. AAR einbinden
 
-`RetroTouch-1.0.0-beta.9.aar` hierhin kopieren:
+`RetroTouch-1.0.0-beta.10.aar` hierhin kopieren:
 
 ```text
 app/libs/retrotouch.aar
@@ -287,7 +287,67 @@ Weitere Regeln:
 - `resetInputState()` meldet für jede Stick-Aktion `0, 0`.
 - Listener ohne `RetroTouchStickListener` erhalten von diesen Sticks nichts.
 
-## 8. Callbacks mit dem Spiel verbinden
+## 8. Icon-Stil (optional)
+
+Neben Beschriftungen (`LABELS`) kann RetroTouch Buttons mit Icons zeichnen (`ICONS`): ein
+Linien-Icon in der Schriftfarbe, ein dickerer Rand (7 % der kürzeren Seite) und bei gehaltenen
+Buttons ein goldener Rand mit äußerem Ring. Setzt ein Spiel nichts davon, sieht alles genau wie in
+beta.9 aus, und der Editor zeigt keinen Design-Schalter.
+
+```java
+// Offer both styles: the editor then shows a style toggle for the player.
+retroTouch.setAvailableButtonStyles(RetroTouchButtonStyle.LABELS, RetroTouchButtonStyle.ICONS);
+retroTouch.setDefaultButtonStyle(RetroTouchButtonStyle.ICONS);   // until the player chooses
+retroTouch.setStyleToggleLabels("Labels", "Icons");               // optional, translated by the game
+
+// Actions with icons; an action without an icon keeps its label in both styles.
+retroTouch.registerAction("a", "A", null, RetroTouchIcon.HAND);
+retroTouch.registerAction("l", "L", null, RetroTouchIcon.KNIFE_HORIZONTAL);
+retroTouch.setActionIcon("l", RetroTouchIcon.CROSSHAIR);          // e.g. for alternate controls
+
+// Shapes with an aspect ratio (width / height); the size is the height.
+gameplay.add(RetroTouchControl.button("btn_l", "l", "L", 0.10f, 0.16f, 0.12f,
+        null, RetroTouchButtonShape.ROUNDED_RECT, 1.95f));
+gameplay.add(RetroTouchControl.button("btn_start", "start", "Start", 0.44f, 0.90f, 0.085f,
+        null, RetroTouchButtonShape.CAPSULE, 2.1f));
+
+// Colors for normal, pressed and latched buttons (pressed and latched are derived if omitted).
+retroTouch.setDefaultColors(new RetroTouchColors(
+        Color.rgb(46, 43, 37), Color.rgb(74, 67, 56), Color.rgb(181, 139, 85), Color.rgb(240, 223, 184))
+        .withPressedColors(Color.rgb(74, 67, 56), Color.rgb(217, 168, 106), Color.rgb(255, 241, 208))
+        .withLatchedColors(Color.rgb(58, 51, 38), Color.rgb(232, 192, 122), Color.rgb(255, 241, 208)));
+
+// Read or set the style, e.g. from the game's own menu; the choice is saved per game.
+RetroTouchButtonStyle style = retroTouch.getButtonStyle();
+retroTouch.setButtonStyle(RetroTouchButtonStyle.LABELS);
+retroTouch.setStyleListener(new RetroTouchStyleListener() {
+    @Override public void onButtonStyleChanged(RetroTouchButtonStyle newStyle) {
+        // the player switched in the editor: update the game's own menu setting
+    }
+});
+```
+
+- **Eingebaute Icons:** `HAND`, `FOOTPRINTS`, `USER`, `BRIEFCASE`, `MAP`, `KNIFE_HORIZONTAL`,
+  `CROSSHAIR`, `CARTRIDGE_HORIZONTAL`, `CIRCLE_PAUSE`, `MENU`, `CHEVRON_UP`, `CHEVRON_DOWN`,
+  `CHEVRON_LEFT`, `CHEVRON_RIGHT`. Eigene Icons: `RetroTouchIcon.fromPaths(24, "M4 6h16", ...)` mit
+  SVG-Pfaddaten; `withScale(1.2f)` zeichnet eines größer. Lucide-Lizenz: `THIRD_PARTY_NOTICES.md`.
+- **Icon-Größe:** 55 % des Kreisdurchmessers, 61 % der Rechteckhöhe (höchstens 80 % der Breite),
+  mal der Zusatzskalierung des Icons.
+- **Formen:** `ROUND`, `RECTANGLE`, `SHOULDER`, `ROUNDED_RECT` (Ecken 35 % der Höhe) und `CAPSULE`
+  (Halbkreise). Sie gelten in beiden Designs und werden auf ihrer Form getroffen.
+- **Wahl:** Das Design des Spielers wird privat pro Spiel gespeichert, getrennt von den Layouts.
+  `RESET` ändert es nicht. Bietet das Spiel ein gespeichertes Design nicht mehr an, gilt wieder das
+  Standard-Design. Der Design-Schalter ist kein Bedienelement und wird nie im Layout gespeichert.
+- **Gehört dem Spiel:** Icons, Formen, Seitenverhältnisse und Farben kommen bei jedem Laden vom
+  Spiel und stehen nicht im gespeicherten Layout. Ein umbelegter Button zeigt das Icon der neuen
+  Aktion.
+- **Aussehen ICONS:** Das Steuerkreuz ist ein Kreuz mit Chevrons; Sticks und Look-Fläche zeigen
+  keine Beschriftung. Der Rand liegt innerhalb des Buttons, daher verschiebt oder vergrößert der
+  Design-Wechsel nichts; nur der Ring gehaltener Buttons ragt darüber hinaus und kann am
+  Bildschirmrand abgeschnitten werden.
+- `RetroTouchColors.withBorderWidth(0.05f)` setzt eine andere Randbreite für den Stil `ICONS`.
+
+## 9. Callbacks mit dem Spiel verbinden
 
 Alle Callbacks laufen im Android-UI-Thread:
 
@@ -321,7 +381,7 @@ JNI-Spiele übertragen diese Werte in ihren bestehenden Eingabestatus oder ihre 
 Keine aufwendige native Spiellogik synchron im UI-Thread ausführen. Drücken und Loslassen immer
 behandeln und gehaltene Zustände beim Pausieren der Activity löschen.
 
-## 9. Dauerfeuer beim Drehen
+## 10. Dauerfeuer beim Drehen
 
 Den Mittelpunkt des FIRE-Buttons innerhalb der Look-Fläche platzieren und die Aktion freigeben:
 
@@ -333,7 +393,7 @@ Der gleiche Finger kann FIRE gedrückt halten und durch Ziehen weiterhin relativ
 erzeugen. FIRE wird erst beim Loslassen oder Abbruch deaktiviert. Andere Buttons funktionieren
 normal weiter. Ein zweiter Finger kann gleichzeitig den linken Bewegungsstick bedienen.
 
-## 10. RUN-Doppeltipp und sichtbare Einrastung
+## 11. RUN-Doppeltipp und sichtbare Einrastung
 
 Der RUN-Doppeltipp ist absichtlich eine Regel des jeweiligen Spiels und nicht fest in RetroTouch
 verdrahtet. Im Action-Callback zwei RUN-Tipps innerhalb des gewünschten Zeitfensters erkennen,
@@ -348,7 +408,7 @@ Immer-laufen nur bei ausgelenktem Bewegungsstick anwenden und den Zustand an den
 andere gehaltene Eingaben zurücksetzen, etwa bei Pause, Levelwechsel oder Programmende. Dadurch
 bleibt RetroTouch auch für Spiele mit anderer RUN-Logik universell.
 
-## 11. Optionales Navigations-Overlay
+## 12. Optionales Navigations-Overlay
 
 Spiele mit bereits vorhandener Touch-Menüsteuerung überspringen diesen Abschnitt und verwenden im
 Menü `OFF`. Andernfalls:
@@ -384,7 +444,7 @@ retroTouch.setMode(RetroTouchMode.NAVIGATION); // D-Pad und frei belegbare Butto
 Gameplay- und Navigationslayout werden getrennt gespeichert. Kein Spiel muss alle Modi verwenden.
 Für UT99 empfiehlt sich zunächst `OFF` in den vorhandenen Touch-Menüs und `GAMEPLAY` im Level.
 
-## 12. Hardware-Controller
+## 13. Hardware-Controller
 
 Soll RetroTouch nur ohne vorhandenen Controller sichtbar sein:
 
@@ -408,7 +468,7 @@ Bedienelemente sowie Xbox-, PlayStation-, USB-, Bluetooth- und generische Contro
 RetroTouch drei Sekunden ausgeblendet. Bei strikter Erkennung nach Controller-Verfügbarkeit sollte
 dies mit `setAutoHideOnController(false)` abgeschaltet werden, damit es nur eine klare Regel gibt.
 
-## 13. Layout-Editor und Bedienung
+## 14. Layout-Editor und Bedienung
 
 Das Settings-Symbol öffnet den Editor. Ein Element auswählen und anschließend:
 
@@ -442,7 +502,7 @@ Standardpositionen, bis sie erneut gespeichert werden.
 Die große Look-Fläche ist nur im Editiermodus sichtbar. Die Layouts liegen in den privaten
 App-Einstellungen und bleiben nach einem Neustart erhalten.
 
-## 14. Activity-Lebenszyklus
+## 15. Activity-Lebenszyklus
 
 Empfohlenes Verhalten des Spiels:
 
@@ -471,7 +531,7 @@ am selben Punkt ebenfalls löschen.
 
 `releaseAllInputs()` ist ein gleichwertiger, sprechender Alias.
 
-## 15. RetroTouch aktualisieren
+## 16. RetroTouch aktualisieren
 
 Bei API-kompatiblen Updates:
 
@@ -484,7 +544,7 @@ Die AAR wird in APK/AAB einkompiliert und kann nicht in einer bereits installier
 ausgetauscht werden. Quellcode-Anpassungen im Spiel sind nur nötig, wenn das Changelog ausdrücklich
 eine inkompatible API-Änderung ankündigt.
 
-## 16. Testliste
+## 17. Testliste
 
 Auf einem echten Touchgerät prüfen:
 
@@ -507,7 +567,7 @@ Auf einem echten Touchgerät prüfen:
 15. Falls ein zweiter Stick verwendet wird: Bewegungsstick und zweiten Stick gleichzeitig bedienen;
     beide melden getrennt, und beim Loslassen kommt `0, 0`.
 
-## 17. Fehlerdiagnose
+## 18. Fehlerdiagnose
 
 - **Overlay nicht sichtbar:** Modus, Controller-Erkennung, `setOverlayEnabled`, Reihenfolge im
   `FrameLayout` und registriertes Gameplay-Layout prüfen.
@@ -529,7 +589,7 @@ Auf einem echten Touchgerät prüfen:
 - **Altes Benutzerlayout verdeckt neue Standardbuttons:** Während der Entwicklung eine neue
   Layout-Spiel-ID verwenden oder im Editor `RESET` wählen.
 
-## 18. Empfohlener erster Unreal-/UT99-Einbau
+## 19. Empfohlener erster Unreal-/UT99-Einbau
 
 Mit der kleinsten sinnvollen Integration beginnen:
 
