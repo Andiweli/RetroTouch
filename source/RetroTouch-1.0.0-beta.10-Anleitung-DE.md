@@ -308,6 +308,9 @@ retroTouch.setActionIcon("l", RetroTouchIcon.CROSSHAIR);          // e.g. for al
 // Shapes with an aspect ratio (width / height); the size is the height.
 gameplay.add(RetroTouchControl.button("btn_l", "l", "L", 0.10f, 0.16f, 0.12f,
         null, RetroTouchButtonShape.ROUNDED_RECT, 1.95f));
+// Shape and aspect per action, so that L buttons added with ADD or remapped with ACTION match.
+retroTouch.setButtonShape("l", RetroTouchButtonShape.ROUNDED_RECT);
+retroTouch.setButtonAspect("l", 1.95f);
 gameplay.add(RetroTouchControl.button("btn_start", "start", "Start", 0.44f, 0.90f, 0.085f,
         null, RetroTouchButtonShape.CAPSULE, 2.1f));
 
@@ -335,6 +338,9 @@ retroTouch.setStyleListener(new RetroTouchStyleListener() {
   mal der Zusatzskalierung des Icons.
 - **Formen:** `ROUND`, `RECTANGLE`, `SHOULDER`, `ROUNDED_RECT` (Ecken 35 % der Höhe) und `CAPSULE`
   (Halbkreise). Sie gelten in beiden Designs und werden auf ihrer Form getroffen.
+- **Seitenverhältnis:** Ein Bedienelement im Standardlayout mit eigenem Seitenverhältnis und
+  derselben Aktion behält es; alle anderen Buttons der Aktion, auch mit `ADD` angelegte oder mit
+  `ACTION` umbelegte, nutzen `setButtonAspect(actionId, aspect)`, sonst 1:1.
 - **Wahl:** Das Design des Spielers wird privat pro Spiel gespeichert, getrennt von den Layouts.
   `RESET` ändert es nicht. Bietet das Spiel ein gespeichertes Design nicht mehr an, gilt wieder das
   Standard-Design. Der Design-Schalter ist kein Bedienelement und wird nie im Layout gespeichert.

@@ -250,6 +250,9 @@ retroTouch.setActionIcon("l", RetroTouchIcon.CROSSHAIR);          // e.g. for al
 // Shapes with an aspect ratio (width / height); the size is the height.
 gameplay.add(RetroTouchControl.button("btn_l", "l", "L", 0.10f, 0.16f, 0.12f,
         null, RetroTouchButtonShape.ROUNDED_RECT, 1.95f));
+// Shape and aspect per action, so that L buttons added with ADD or remapped with ACTION match.
+retroTouch.setButtonShape("l", RetroTouchButtonShape.ROUNDED_RECT);
+retroTouch.setButtonAspect("l", 1.95f);
 gameplay.add(RetroTouchControl.button("btn_start", "start", "Start", 0.44f, 0.90f, 0.085f,
         null, RetroTouchButtonShape.CAPSULE, 2.1f));
 
@@ -277,6 +280,9 @@ retroTouch.setStyleListener(new RetroTouchStyleListener() {
   width), times the icon's extra scale.
 - **Shapes:** `ROUND`, `RECTANGLE`, `SHOULDER`, `ROUNDED_RECT` (corners 35 % of the height) and
   `CAPSULE` (half circles). They apply in both styles and are touched on their shape.
+- **Aspect ratio:** a default-layout control with its own aspect and the same action keeps it;
+  every other button of the action, including ones added with `ADD` or remapped with `ACTION`,
+  uses `setButtonAspect(actionId, aspect)`, else 1:1.
 - **Choice:** the player's style is saved privately per game, separate from the layouts. `RESET`
   does not change it. A saved style that the game no longer offers falls back to the default.
   The style toggle is not a control and is never saved in a layout.
