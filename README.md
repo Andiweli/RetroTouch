@@ -80,6 +80,8 @@ RetroTouch is designed for:
 
 ## Project status
 
+<img width="1536" height="864" alt="image" src="https://github.com/Andiweli/RetroTouch/blob/main/images/retrotouch-button-styles.png" />
+
 The current release is **RetroTouch 1.0.0-beta.10**.
 
 | Version | Date | Highlights |
