@@ -43,7 +43,10 @@ RetroTouch was created for retro FPS ports that need modern Android multitouch c
 - large, centered one-character labels such as `A` or `B` that scale with the button
 - rectangle buttons with slightly rounded corners for START, SELECT, MENU, shoulders and triggers
 - optional game-defined colors per action, per control or for the whole overlay, including the border
-- optional icon style with 14 built-in icons, rounded-rectangle and capsule shapes and a style toggle for the player
+- optional icon style with 14 built-in icons, a thicker border and a golden ring for latched buttons
+- a style toggle in the editor so players can switch between labels and icons; the game picks the default
+- rounded-rectangle and capsule buttons with an aspect ratio per control or per action
+- separate colors for pressed and latched buttons
 
 **Modes and layouts**
 - independent `OFF`, `GAMEPLAY` and optional `NAVIGATION` modes
@@ -81,7 +84,7 @@ The current release is **RetroTouch 1.0.0-beta.10**.
 
 | Version | Date | Highlights |
 |---|---|---|
-| beta.10 | 2026-11-09 | Optional icon style with style toggle in the editor, new shapes, state colors |
+| beta.10 | 2026-11-10 | Optional icon style with 14 icons and a style toggle in the editor; capsule and rounded-rectangle shapes; aspect ratio per action; pressed and latched colors |
 | beta.9 | 2026-11-03 | Controls reach every screen edge, thicker borders, stick knobs run along the ring |
 | beta.8 | 2026-11-03 | Rectangle buttons for START, SELECT, MENU, shoulders and triggers; border colors; fitted editor frame |
 | beta.7 | 2026-10-26 | Optional second analog stick that reports separately (`onStick`) |
@@ -229,69 +232,19 @@ Rectangles have slightly rounded corners and are touched on their whole area. A 
 retroTouch.setButtonShape("z", RetroTouchButtonShape.SHOULDER); // RECTANGLE, ROUND, AUTO
 ```
 
-## Icon style
-
-Besides text labels (`LABELS`), RetroTouch can draw buttons with icons (`ICONS`): a stroke icon
-in the button's text color, a thicker border (7 % of the smaller side) and, for latched buttons, a
-golden border with an outer ring. A game that sets nothing keeps exactly the beta.9 look, and the
-editor shows no style toggle.
+Two more shapes take an aspect ratio (width / height): `ROUNDED_RECT` with corners of 35 % of the height and `CAPSULE` with half-circle ends. For them the button's size is its height. Shapes apply in both button styles.
 
 ```java
-// Offer both styles: the editor then shows a style toggle for the player.
-retroTouch.setAvailableButtonStyles(RetroTouchButtonStyle.LABELS, RetroTouchButtonStyle.ICONS);
-retroTouch.setDefaultButtonStyle(RetroTouchButtonStyle.ICONS);   // until the player chooses
-retroTouch.setStyleToggleLabels("Labels", "Icons");               // optional, translated by the game
-
-// Actions with icons; an action without an icon keeps its label in both styles.
-retroTouch.registerAction("a", "A", null, RetroTouchIcon.HAND);
-retroTouch.registerAction("l", "L", null, RetroTouchIcon.KNIFE_HORIZONTAL);
-retroTouch.setActionIcon("l", RetroTouchIcon.CROSSHAIR);          // e.g. for alternate controls
-
-// Shapes with an aspect ratio (width / height); the size is the height.
-gameplay.add(RetroTouchControl.button("btn_l", "l", "L", 0.10f, 0.16f, 0.12f,
-        null, RetroTouchButtonShape.ROUNDED_RECT, 1.95f));
-// Shape and aspect per action, so that L buttons added with ADD or remapped with ACTION match.
-retroTouch.setButtonShape("l", RetroTouchButtonShape.ROUNDED_RECT);
-retroTouch.setButtonAspect("l", 1.95f);
+// On a single control in the default layout:
 gameplay.add(RetroTouchControl.button("btn_start", "start", "Start", 0.44f, 0.90f, 0.085f,
         null, RetroTouchButtonShape.CAPSULE, 2.1f));
 
-// Colors for normal, pressed and latched buttons (pressed and latched are derived if omitted).
-retroTouch.setDefaultColors(new RetroTouchColors(
-        Color.rgb(46, 43, 37), Color.rgb(74, 67, 56), Color.rgb(181, 139, 85), Color.rgb(240, 223, 184))
-        .withPressedColors(Color.rgb(74, 67, 56), Color.rgb(217, 168, 106), Color.rgb(255, 241, 208))
-        .withLatchedColors(Color.rgb(58, 51, 38), Color.rgb(232, 192, 122), Color.rgb(255, 241, 208)));
-
-// Read or set the style, e.g. from the game's own menu; the choice is saved per game.
-RetroTouchButtonStyle style = retroTouch.getButtonStyle();
-retroTouch.setButtonStyle(RetroTouchButtonStyle.LABELS);
-retroTouch.setStyleListener(new RetroTouchStyleListener() {
-    @Override public void onButtonStyleChanged(RetroTouchButtonStyle newStyle) {
-        // the player switched in the editor: update the game's own menu setting
-    }
-});
+// Per action, so that buttons added with ADD or remapped with ACTION match:
+retroTouch.setButtonShape("l", RetroTouchButtonShape.ROUNDED_RECT);
+retroTouch.setButtonAspect("l", 1.95f);
 ```
 
-- **Built-in icons:** `HAND`, `FOOTPRINTS`, `USER`, `BRIEFCASE`, `MAP`, `KNIFE_HORIZONTAL`,
-  `CROSSHAIR`, `CARTRIDGE_HORIZONTAL`, `CIRCLE_PAUSE`, `MENU`, `CHEVRON_UP`, `CHEVRON_DOWN`,
-  `CHEVRON_LEFT`, `CHEVRON_RIGHT`. Own icons: `RetroTouchIcon.fromPaths(24, "M4 6h16", ...)` with
-  SVG path data; `withScale(1.2f)` draws one larger. Lucide license: `THIRD_PARTY_NOTICES.md`.
-- **Icon size:** 55 % of a circle's diameter, 61 % of a rectangle's height (at most 80 % of its
-  width), times the icon's extra scale.
-- **Shapes:** `ROUND`, `RECTANGLE`, `SHOULDER`, `ROUNDED_RECT` (corners 35 % of the height) and
-  `CAPSULE` (half circles). They apply in both styles and are touched on their shape.
-- **Aspect ratio:** a default-layout control with its own aspect and the same action keeps it;
-  every other button of the action, including ones added with `ADD` or remapped with `ACTION`,
-  uses `setButtonAspect(actionId, aspect)`, else 1:1.
-- **Choice:** the player's style is saved privately per game, separate from the layouts. `RESET`
-  does not change it. A saved style that the game no longer offers falls back to the default.
-  The style toggle is not a control and is never saved in a layout.
-- **Owned by the game:** icons, shapes, aspect ratios and colors come from the game on every load
-  and are not stored in saved layouts. A remapped button shows the new action's icon.
-- **ICONS look:** the D-pad is a cross with chevrons; sticks and the look zone show no labels.
-  The border is drawn inside the button, so switching styles moves or resizes nothing; only the
-  latched ring reaches past the button and may be cut off at a screen edge.
-- `RetroTouchColors.withBorderWidth(0.05f)` sets another border width for the `ICONS` style.
+A control in the default layout with its own aspect ratio and the same action keeps it; every other button of the action uses `setButtonAspect`, else 1:1. Shapes and aspect ratios come from the game on every load and are not stored in saved layouts.
 
 ## Optional colors
 
@@ -321,6 +274,57 @@ retroTouch.setDefaultColors(RetroTouchColors.of(Color.rgb(40, 104, 200)));
 `RetroTouchColors` holds a fill, pressed, border and text color. `RetroTouchColors.of(fill, pressed, text)` and `new RetroTouchColors(fill, pressed, border, text)` set them explicitly. The most specific setting wins: control, then action, then the default colors, then the built-in grey.
 
 Colors are not stored in saved player layouts. RetroTouch re-applies the game's colors on every load, so existing layouts keep working and pick up color changes from a game update.
+
+## Icon style
+
+Besides text labels (`LABELS`), RetroTouch can draw buttons with icons (`ICONS`). A game that sets nothing keeps exactly the beta.9 look, and the editor shows no style toggle.
+
+![LABELS and ICONS style of the same layout](images/retrotouch-button-styles.png)
+
+In the `ICONS` style, a button shows a stroke icon in its text color and a thicker border (7 % of its smaller side). A latched button gets a golden border and an outer ring. The D-pad becomes a cross with chevrons, and sticks and the look zone show no labels. An action without an icon keeps its text label in both styles.
+
+```java
+// Offer both styles: the editor then shows a style toggle for the player.
+retroTouch.setAvailableButtonStyles(RetroTouchButtonStyle.LABELS, RetroTouchButtonStyle.ICONS);
+retroTouch.setDefaultButtonStyle(RetroTouchButtonStyle.ICONS);   // until the player chooses
+retroTouch.setStyleToggleLabels("Labels", "Icons");               // optional, translated by the game
+
+// Actions with icons; an action without an icon keeps its label in both styles.
+retroTouch.registerAction("a", "A", null, RetroTouchIcon.HAND);
+retroTouch.registerAction("l", "L", null, RetroTouchIcon.KNIFE_HORIZONTAL);
+retroTouch.setActionIcon("l", RetroTouchIcon.CROSSHAIR);          // e.g. for alternate controls
+
+// Colors for normal, pressed and latched buttons (pressed and latched are derived if omitted).
+retroTouch.setDefaultColors(new RetroTouchColors(
+        Color.rgb(46, 43, 37), Color.rgb(74, 67, 56), Color.rgb(181, 139, 85), Color.rgb(240, 223, 184))
+        .withPressedColors(Color.rgb(74, 67, 56), Color.rgb(217, 168, 106), Color.rgb(255, 241, 208))
+        .withLatchedColors(Color.rgb(58, 51, 38), Color.rgb(232, 192, 122), Color.rgb(255, 241, 208)));
+
+// Read or set the style, e.g. from the game's own menu; the choice is saved per game.
+RetroTouchButtonStyle style = retroTouch.getButtonStyle();
+retroTouch.setButtonStyle(RetroTouchButtonStyle.LABELS);
+retroTouch.setStyleListener(new RetroTouchStyleListener() {
+    @Override public void onButtonStyleChanged(RetroTouchButtonStyle newStyle) {
+        // the player switched in the editor: update the game's own menu setting
+    }
+});
+```
+
+**Icons**
+- Built-in: `HAND`, `FOOTPRINTS`, `USER`, `BRIEFCASE`, `MAP`, `KNIFE_HORIZONTAL`, `CROSSHAIR`, `CARTRIDGE_HORIZONTAL`, `CIRCLE_PAUSE`, `MENU`, `CHEVRON_UP`, `CHEVRON_DOWN`, `CHEVRON_LEFT`, `CHEVRON_RIGHT`.
+- Own icons: `RetroTouchIcon.fromPaths(24, "M4 6h16", ...)` with SVG path data; `withScale(1.2f)` draws an icon larger.
+- Size: 55 % of a circle's diameter, 61 % of a rectangle's height (at most 80 % of its width), times the icon's extra scale.
+- The icon follows the action: a button remapped with `ACTION` shows the new action's icon, and `setActionIcon` changes an icon at runtime.
+
+**Style choice**
+- The game offers styles with `setAvailableButtonStyles` and picks the default with `setDefaultButtonStyle`; it does not have to be `LABELS`.
+- With two styles offered, the editor shows a style toggle. The player's choice is saved privately per game, separate from the layouts; `RESET` does not change it.
+- A saved style the game no longer offers falls back to the default. The style toggle is never saved in a layout.
+- Switching styles moves or resizes nothing: the `ICONS` border is drawn inside the button. Only the latched ring reaches past the button and may be cut off at a screen edge.
+
+**Colors**
+- `withPressedColors` and `withLatchedColors` set fill, border and icon color for those states; without them RetroTouch derives them (latched border: gold).
+- `withBorderWidth(0.05f)` sets another border width for the `ICONS` style.
 
 ## Analog sticks
 
@@ -373,7 +377,7 @@ Always-run or double-tap logic belongs to the host game because every engine han
 retroTouch.setActionLatched("run", alwaysRunEnabled);
 ```
 
-A latched action is drawn two opacity levels stronger. The game remains responsible for detecting the double tap and applying the run multiplier while movement is active.
+In the `LABELS` style a latched action is drawn two opacity levels stronger; in the `ICONS` style it gets a golden border and an outer ring. The game remains responsible for detecting the double tap and applying the run multiplier while movement is active.
 
 ## Layout editor
 
@@ -423,10 +427,10 @@ The call releases held actions, sends neutral movement for the move stick and ev
 
 | Class | Purpose |
 |---|---|
-| `RetroTouchView` | The overlay: actions, layouts, modes, colors, shapes, latches, input reset |
-| `RetroTouchControl` | Factory for buttons, move sticks, look zones and D-pads |
+| `RetroTouchView` | The overlay: actions, layouts, modes, colors, shapes and aspect ratios, button styles, icons, latches, input reset |
+| `RetroTouchControl` | Factory for buttons (optionally with colors, shape and aspect ratio), move sticks, look zones and D-pads |
 | `RetroTouchLayout` | A game's set of controls with a stable game/layout ID |
-| `RetroTouchAction` | An action ID with its label and optional colors |
+| `RetroTouchAction` | An action ID with its label, optional colors and optional icon |
 | `RetroTouchListener` / `RetroTouchAdapter` | Callbacks: `onAction`, `onMove`, `onLook`, `onEditorStateChanged` |
 | `RetroTouchStickListener` | Optional callback for second analog sticks: `onStick` (beta.7) |
 | `RetroTouchColors` | Fill, pressed, border and text colors (beta.5); `withBorderColor` (beta.8); pressed, latched colors and border width for icons (beta.10) |
@@ -461,6 +465,8 @@ Expected outputs:
 retrotouch/build/outputs/aar/retrotouch-release.aar
 sample/build/outputs/apk/debug/sample-debug.apk
 ```
+
+The sample app shows both button styles with all built-in icons, the three button states and the shapes. Open the editor to use the style toggle; a button at the top left switches the game's default style for testing. `./gradlew :retrotouch:test` runs the unit test of the SVG path parser.
 
 ## Compatibility policy
 
