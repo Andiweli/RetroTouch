@@ -3,7 +3,7 @@
 > A lightweight, configurable and reusable touch-control overlay for Android games.
 
 [![Android API](https://img.shields.io/badge/Android-API%2016--36-3DDC84?logo=android&logoColor=white)](https://developer.android.com/)
-[![Status](https://img.shields.io/badge/Status-1.0.0--beta.10-orange)](#project-status)
+[![Status](https://img.shields.io/badge/Status-1.0.0--beta.11-orange)](#project-status)
 [![Language](https://img.shields.io/badge/Java-8-ED8B00?logo=openjdk&logoColor=white)](https://www.java.com/)
 ![AI](https://img.shields.io/badge/AI-assisted%20coding-6e7781)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -58,6 +58,7 @@ RetroTouch was created for retro FPS ports that need modern Android multitouch c
 - a selection frame that fits the visible control
 - movable, scalable and opacity-adjustable Settings button
 - vertically draggable editor toolbar
+- optional safe insets that keep the editor toolbar clear of a camera cutout
 
 **Gameplay support**
 - FPS-friendly simultaneous movement, turning and held FIRE
@@ -82,11 +83,12 @@ RetroTouch is designed for:
 
 <img width="1536" height="864" alt="image" src="https://github.com/Andiweli/RetroTouch/blob/main/images/retrotouch-button-styles.png" />
 
-The current release is **RetroTouch 1.0.0-beta.10**.
+The current release is **RetroTouch 1.0.0-beta.11**.
 
 | Version | Date | Highlights |
 |---|---|---|
 | beta.10 | 2026-11-10 | Optional icon style with 14 icons and a style toggle in the editor; capsule and rounded-rectangle shapes; aspect ratio per action; pressed and latched colors |
+| beta.11 | 2026-11-14 | Safe insets keep the editor bar clear of a camera cutout (`setSafeInsets`) |
 | beta.9 | 2026-11-03 | Controls reach every screen edge, thicker borders, stick knobs run along the ring |
 | beta.8 | 2026-11-03 | Rectangle buttons for START, SELECT, MENU, shoulders and triggers; border colors; fitted editor frame |
 | beta.7 | 2026-10-26 | Optional second analog stick that reports separately (`onStick`) |
@@ -97,7 +99,7 @@ The current release is **RetroTouch 1.0.0-beta.10**.
 | beta.2 | 2026-08-27 | Universal one- or two-line button labels |
 | beta.1 | 2026-08-27 | First public beta with the complete core feature set |
 
-The complete core feature set has been tested with the Android port of **Breathless**, including multitouch movement, relative look, held FIRE while turning, always-run indication, D-pad menu navigation, controller detection and editable layouts. The additions of beta.5 to beta.10 are covered by automated rendering tests against the released AAR. The beta phase continues while RetroTouch is tested across additional engines and input stacks.
+The complete core feature set has been tested with the Android port of **Breathless**, including multitouch movement, relative look, held FIRE while turning, always-run indication, D-pad menu navigation, controller detection and editable layouts. The additions of beta.5 to beta.11 are covered by automated rendering tests against the released AAR. The beta phase continues while RetroTouch is tested across additional engines and input stacks.
 
 ## How RetroTouch is structured
 
@@ -113,7 +115,7 @@ The AAR is compiled into the final application. It cannot be exchanged inside an
 
 ## Installation with the AAR
 
-The current AAR is in this repository as [`source/RetroTouch-1.0.0-beta.10.aar`](source/RetroTouch-1.0.0-beta.10.aar). Copy it into the application module as:
+The current AAR is in this repository as [`source/RetroTouch-1.0.0-beta.11.aar`](source/RetroTouch-1.0.0-beta.11.aar). Copy it into the application module as:
 
 ```text
 app/libs/retrotouch.aar
@@ -129,7 +131,7 @@ dependencies {
 
 Do not also copy RetroTouch Java sources into the app module. Keeping the library behind the AAR boundary makes future updates predictable.
 
-The `source/` folder also contains the complete source package (`RetroTouch-1.0.0-beta.10-source.zip`) and detailed integration guides in [English](source/RetroTouch-1.0.0-beta.10-Guide-EN.md) and [German](source/RetroTouch-1.0.0-beta.10-Anleitung-DE.md).
+The `source/` folder also contains the complete source package (`RetroTouch-1.0.0-beta.11-source.zip`) and detailed integration guides in [English](source/RetroTouch-1.0.0-beta.11-Guide-EN.md) and [German](source/RetroTouch-1.0.0-beta.11-Anleitung-DE.md).
 
 ## Minimal integration
 
@@ -397,6 +399,31 @@ The Settings button opens the in-game editor. Players can:
 
 The white selection frame fits the visible control: a square around round buttons, sticks and D-pads, and the rectangle around rectangle buttons. The Settings button itself can be selected, moved, resized and adjusted with `ALPHA`, but cannot be deleted. The editor toolbar can be dragged vertically when it covers another control. All settings are stored privately per game/layout ID.
 
+### Camera cutout
+
+If the game window covers a camera cutout (notch or punch hole), RetroTouch still fills the whole window, so players can place controls in the cutout strip too. `setSafeInsets` keeps only the editor bar, its `↕ DRAG` line and the Settings button's default position away from the cutout:
+
+```java
+// Keep the editor bar clear of a camera cutout (Android 9 / API 28 and newer).
+if (Build.VERSION.SDK_INT >= 28) {
+    retroTouch.setOnApplyWindowInsetsListener(new View.OnApplyWindowInsetsListener() {
+        @Override public WindowInsets onApplyWindowInsets(View view, WindowInsets insets) {
+            DisplayCutout cutout = insets.getDisplayCutout();
+            if (cutout == null) retroTouch.setSafeInsets(0, 0, 0, 0);
+            else retroTouch.setSafeInsets(cutout.getSafeInsetLeft(), cutout.getSafeInsetTop(),
+                    cutout.getSafeInsetRight(), cutout.getSafeInsetBottom());
+            return insets;
+        }
+    });
+}
+```
+
+- The insets are in pixels and can change at any time, for example after a 180° rotation.
+- Controls, sticks and their saved positions are not affected and keep the whole view.
+- A Settings button that was saved or moved keeps its place; `RESET` brings it back to its default inside the insets.
+- Insets that would leave less than half of the view's width or height are ignored on that axis.
+- Without a call all insets are 0 and nothing changes.
+
 ## Controller coexistence
 
 Games that should show RetroTouch only when no physical controller is available can use:
@@ -429,7 +456,7 @@ The call releases held actions, sends neutral movement for the move stick and ev
 
 | Class | Purpose |
 |---|---|
-| `RetroTouchView` | The overlay: actions, layouts, modes, colors, shapes and aspect ratios, button styles, icons, latches, input reset |
+| `RetroTouchView` | The overlay: actions, layouts, modes, colors, shapes and aspect ratios, button styles, icons, latches, input reset, safe insets for the editor |
 | `RetroTouchControl` | Factory for buttons (optionally with colors, shape and aspect ratio), move sticks, look zones and D-pads |
 | `RetroTouchLayout` | A game's set of controls with a stable game/layout ID |
 | `RetroTouchAction` | An action ID with its label, optional colors and optional icon |

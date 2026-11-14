@@ -1,4 +1,4 @@
-# RetroTouch 1.0.0-beta.10 — integration and usage guide
+# RetroTouch 1.0.0-beta.11 — integration and usage guide
 
 ## 1. What RetroTouch is
 
@@ -41,7 +41,7 @@ The host game provides:
 
 ## 3. Add the AAR
 
-Copy `RetroTouch-1.0.0-beta.10.aar` to:
+Copy `RetroTouch-1.0.0-beta.11.aar` to:
 
 ```text
 app/libs/retrotouch.aar
@@ -487,6 +487,29 @@ covers a touch control. `SAVE` stores the settings-button position, size and opa
 toolbar's vertical position independently for every gameplay or navigation layout. `RESET` also
 restores these editor elements to their defaults. Existing saved layouts remain compatible and
 use the previous default editor positions until saved again.
+
+If the game window covers a camera cutout, `setSafeInsets(left, top, right, bottom)` (pixels,
+1.0.0-beta.11) keeps the editor bar, its `↕ DRAG` line and the settings button's default position
+inside the view minus these insets. Controls, sticks and saved positions keep the whole view.
+Call it again whenever the insets change, for example after a rotation:
+
+```java
+// Keep the editor bar clear of a camera cutout (Android 9 / API 28 and newer).
+if (Build.VERSION.SDK_INT >= 28) {
+    retroTouch.setOnApplyWindowInsetsListener(new View.OnApplyWindowInsetsListener() {
+        @Override public WindowInsets onApplyWindowInsets(View view, WindowInsets insets) {
+            DisplayCutout cutout = insets.getDisplayCutout();
+            if (cutout == null) retroTouch.setSafeInsets(0, 0, 0, 0);
+            else retroTouch.setSafeInsets(cutout.getSafeInsetLeft(), cutout.getSafeInsetTop(),
+                    cutout.getSafeInsetRight(), cutout.getSafeInsetBottom());
+            return insets;
+        }
+    });
+}
+```
+
+Without a call all insets are 0 and the editor looks as before. A settings button that was saved or
+moved keeps its saved place; `RESET` brings it back to its default inside the insets.
 
 The large look area is shown only in edit mode. Saved layouts are private app preferences; they
 remain available after restarting the game.

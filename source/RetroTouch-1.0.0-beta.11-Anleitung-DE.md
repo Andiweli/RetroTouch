@@ -1,4 +1,4 @@
-# RetroTouch 1.0.0-beta.10 — Einbau- und Bedienungsanleitung
+# RetroTouch 1.0.0-beta.11 — Einbau- und Bedienungsanleitung
 
 ## 1. Was RetroTouch ist
 
@@ -42,7 +42,7 @@ Das Spiel übernimmt:
 
 ## 3. AAR einbinden
 
-`RetroTouch-1.0.0-beta.10.aar` hierhin kopieren:
+`RetroTouch-1.0.0-beta.11.aar` hierhin kopieren:
 
 ```text
 app/libs/retrotouch.aar
@@ -504,6 +504,31 @@ Größe und Alpha des Settings-Buttons sowie die vertikale Leistenposition getre
 Gameplay- oder Navigationslayout. `RESET` setzt auch diese Editor-Elemente auf ihre Vorgaben
 zurück. Bereits vorhandene Layouts bleiben kompatibel und erhalten automatisch die bisherigen
 Standardpositionen, bis sie erneut gespeichert werden.
+
+Reicht das Spielfenster über eine Kameraaussparung (Notch oder Kameraloch), hält
+`setSafeInsets(links, oben, rechts, unten)` (Pixel, 1.0.0-beta.11) die Editor-Leiste, ihre
+`↕ DRAG`-Zeile und die Standardposition des Settings-Buttons innerhalb der Ansicht abzüglich dieser
+Ränder. Buttons, Sticks und gespeicherte Positionen nutzen weiter die ganze Fläche. Bei jeder
+Änderung erneut aufrufen, zum Beispiel nach einer Drehung:
+
+```java
+// Editor-Leiste von der Kameraaussparung fernhalten (ab Android 9 / API 28).
+if (Build.VERSION.SDK_INT >= 28) {
+    retroTouch.setOnApplyWindowInsetsListener(new View.OnApplyWindowInsetsListener() {
+        @Override public WindowInsets onApplyWindowInsets(View view, WindowInsets insets) {
+            DisplayCutout cutout = insets.getDisplayCutout();
+            if (cutout == null) retroTouch.setSafeInsets(0, 0, 0, 0);
+            else retroTouch.setSafeInsets(cutout.getSafeInsetLeft(), cutout.getSafeInsetTop(),
+                    cutout.getSafeInsetRight(), cutout.getSafeInsetBottom());
+            return insets;
+        }
+    });
+}
+```
+
+Ohne Aufruf sind alle Ränder 0 und der Editor sieht aus wie bisher. Ein gespeicherter oder
+verschobener Settings-Button behält seinen Platz; `RESET` setzt ihn auf die Standardposition
+innerhalb der Ränder zurück.
 
 Die große Look-Fläche ist nur im Editiermodus sichtbar. Die Layouts liegen in den privaten
 App-Einstellungen und bleiben nach einem Neustart erhalten.
