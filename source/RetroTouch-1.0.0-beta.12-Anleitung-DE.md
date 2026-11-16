@@ -1,4 +1,4 @@
-# RetroTouch 1.0.0-beta.11 — Einbau- und Bedienungsanleitung
+# RetroTouch 1.0.0-beta.12 — Einbau- und Bedienungsanleitung
 
 ## 1. Was RetroTouch ist
 
@@ -42,7 +42,7 @@ Das Spiel übernimmt:
 
 ## 3. AAR einbinden
 
-`RetroTouch-1.0.0-beta.11.aar` hierhin kopieren:
+`RetroTouch-1.0.0-beta.12.aar` hierhin kopieren:
 
 ```text
 app/libs/retrotouch.aar
@@ -273,12 +273,15 @@ retroTouch.setListener(new TouchBridge());
 
 Weitere Regeln:
 
-- Ein Stick zeigt seine Beschriftung; ein einzelner Buchstabe steht groß auf dem Knopf.
+- Ein Stick zeigt seine Beschriftung; ein einzelner Buchstabe steht groß auf dem Knopf. Im
+  ICONS-Stil zeigt der Knopf das Icon der Stick-Aktion (`registerStickAction(id, label, colors,
+  icon)`, beta.12), sonst ihre Beschriftung.
 - Im Editor wird ein Button zum Stick, wenn der Spieler mit `ACTION` die Stick-Aktion wählt;
   weiteres `ACTION` macht ihn wieder zum Button.
 - Ein Layout hat höchstens zwei Sticks (Bewegungsstick mitgezählt) und 16 Buttons. `ACTION`
   überspringt, was diese Grenzen sprengen würde. Ein Button, der wegen der Grenze kein Stick
-  werden kann, bleibt ohne Funktion.
+  werden kann, bleibt ohne Funktion. `setMaxSticks(n)` (beta.12) erlaubt bis zu 8 Sticks;
+  vorhandene Sticks bleiben, wenn die Grenze gesenkt wird.
 - Stick-Aktionen kommen nie über `onAction`. Mit `ADD` angelegte Buttons erhalten die erste
   normale Aktion.
 - `isStickAction(id)` sagt, ob eine Aktion eine Stick-Aktion ist. `registerAction(id, ...)` macht
@@ -286,6 +289,31 @@ Weitere Regeln:
   und entfernt dabei auch alle Stick-Aktionen.
 - `resetInputState()` meldet für jede Stick-Aktion `0, 0`.
 - Listener ohne `RetroTouchStickListener` erhalten von diesen Sticks nichts.
+
+**Finger auf und ab (beta.12).** Ein Listener, der zusätzlich `RetroTouchStickTouchListener`
+implementiert, erfährt, wann ein Finger einen Stick berührt und wann er ihn verlässt, auch wenn er
+in der Mitte ruht, wo `onStick` `0, 0` meldet. So lässt sich „R halten, solange der Finger auf AIM
+liegt“ einfach umsetzen:
+
+```java
+retroTouch.setMaxSticks(4); // Bewegungsstick + C + AIM + KNIFE
+retroTouch.registerStickAction("cstick", "C", yellow);
+retroTouch.registerStickAction("aimstick", "AIM", null, RetroTouchIcon.CROSSHAIR);
+retroTouch.registerStickAction("knifestick", "KNIFE", null, RetroTouchIcon.KNIFE_HORIZONTAL);
+
+final class Sticks extends RetroTouchAdapter
+        implements RetroTouchStickListener, RetroTouchStickTouchListener {
+    @Override public void onStick(String actionId, float x, float y) { /* Neigung, -1..1 */ }
+    @Override public void onStickDown(String actionId) { /* z. B. R halten, solange auf AIM */ }
+    @Override public void onStickUp(String actionId) { /* R loslassen */ }
+}
+retroTouch.setListener(new Sticks());
+```
+
+- Der Bewegungsstick meldet eine leere Aktions-ID (`""`).
+- `resetInputState()`, Modus- und Layoutwechsel und das Öffnen des Editors senden `onStickUp` für
+  jeden gehaltenen Stick. Ziehen im Editor sendet nichts.
+- Zwei Sticks mit derselben Aktion melden jeweils für sich.
 
 ## 8. Icon-Stil (optional)
 
@@ -347,8 +375,9 @@ retroTouch.setStyleListener(new RetroTouchStyleListener() {
 - **Gehört dem Spiel:** Icons, Formen, Seitenverhältnisse und Farben kommen bei jedem Laden vom
   Spiel und stehen nicht im gespeicherten Layout. Ein umbelegter Button zeigt das Icon der neuen
   Aktion.
-- **Aussehen ICONS:** Das Steuerkreuz ist ein Kreuz mit Chevrons; Sticks und Look-Fläche zeigen
-  keine Beschriftung. Der Rand liegt innerhalb des Buttons, daher verschiebt oder vergrößert der
+- **Aussehen ICONS:** Das Steuerkreuz ist ein Kreuz mit Chevrons; Bewegungsstick und Look-Fläche
+  zeigen keine Beschriftung, ein Stick einer Stick-Aktion zeigt ihr Icon oder ihre Beschriftung
+  auf dem Knopf (beta.12). Der Rand liegt innerhalb des Buttons, daher verschiebt oder vergrößert der
   Design-Wechsel nichts; nur der Ring gehaltener Buttons ragt darüber hinaus und kann am
   Bildschirmrand abgeschnitten werden.
 - `RetroTouchColors.withBorderWidth(0.05f)` setzt eine andere Randbreite für den Stil `ICONS`.

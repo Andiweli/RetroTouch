@@ -3,7 +3,7 @@
 > A lightweight, configurable and reusable touch-control overlay for Android games.
 
 [![Android API](https://img.shields.io/badge/Android-API%2016--36-3DDC84?logo=android&logoColor=white)](https://developer.android.com/)
-[![Status](https://img.shields.io/badge/Status-1.0.0--beta.11-orange)](#project-status)
+[![Status](https://img.shields.io/badge/Status-1.0.0--beta.12-orange)](#project-status)
 [![Language](https://img.shields.io/badge/Java-8-ED8B00?logo=openjdk&logoColor=white)](https://www.java.com/)
 ![AI](https://img.shields.io/badge/AI-assisted%20coding-6e7781)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -33,8 +33,9 @@ RetroTouch was created for retro FPS ports that need modern Android multitouch c
 **Controls**
 - true pointer-ID-based multitouch
 - up to 16 configurable action buttons
-- up to two analog sticks, two relative-look zones and two digital D-pads
-- a move stick plus an optional second analog stick, for example a GameCube C-stick, that reports separately
+- up to two analog sticks by default and up to eight with `setMaxSticks`, two relative-look zones and two digital D-pads
+- a move stick plus optional extra analog sticks, for example a GameCube C-stick or aim and knife sticks, that report separately
+- optional finger down/up callbacks per stick
 - stick knobs that run with their center along the ring
 - normalized layouts for 4:3, 16:9, 20:9, tablets and ultrawide Automotive displays
 
@@ -83,12 +84,13 @@ RetroTouch is designed for:
 
 <img width="1536" height="864" alt="image" src="https://github.com/Andiweli/RetroTouch/blob/main/images/retrotouch-button-styles.png" />
 
-The current release is **RetroTouch 1.0.0-beta.11**.
+The current release is **RetroTouch 1.0.0-beta.12**.
 
 | Version | Date | Highlights |
 |---|---|---|
 | beta.10 | 2026-11-10 | Optional icon style with 14 icons and a style toggle in the editor; capsule and rounded-rectangle shapes; aspect ratio per action; pressed and latched colors |
 | beta.11 | 2026-11-14 | Safe insets keep the editor bar clear of a camera cutout (`setSafeInsets`) |
+| beta.12 | 2026-11-16 | Up to 8 sticks per layout (`setMaxSticks`); icons and labels on stick knobs in the icon style; finger down/up per stick (`RetroTouchStickTouchListener`) |
 | beta.9 | 2026-11-03 | Controls reach every screen edge, thicker borders, stick knobs run along the ring |
 | beta.8 | 2026-11-03 | Rectangle buttons for START, SELECT, MENU, shoulders and triggers; border colors; fitted editor frame |
 | beta.7 | 2026-10-26 | Optional second analog stick that reports separately (`onStick`) |
@@ -99,7 +101,7 @@ The current release is **RetroTouch 1.0.0-beta.11**.
 | beta.2 | 2026-08-27 | Universal one- or two-line button labels |
 | beta.1 | 2026-08-27 | First public beta with the complete core feature set |
 
-The complete core feature set has been tested with the Android port of **Breathless**, including multitouch movement, relative look, held FIRE while turning, always-run indication, D-pad menu navigation, controller detection and editable layouts. The additions of beta.5 to beta.11 are covered by automated rendering tests against the released AAR. The beta phase continues while RetroTouch is tested across additional engines and input stacks.
+The complete core feature set has been tested with the Android port of **Breathless**, including multitouch movement, relative look, held FIRE while turning, always-run indication, D-pad menu navigation, controller detection and editable layouts. The additions of beta.5 to beta.12 are covered by automated rendering tests against the released AAR. The beta phase continues while RetroTouch is tested across additional engines and input stacks.
 
 ## How RetroTouch is structured
 
@@ -115,7 +117,7 @@ The AAR is compiled into the final application. It cannot be exchanged inside an
 
 ## Installation with the AAR
 
-The current AAR is in this repository as [`source/RetroTouch-1.0.0-beta.11.aar`](source/RetroTouch-1.0.0-beta.11.aar). Copy it into the application module as:
+The current AAR is in this repository as [`source/RetroTouch-1.0.0-beta.12.aar`](source/RetroTouch-1.0.0-beta.12.aar). Copy it into the application module as:
 
 ```text
 app/libs/retrotouch.aar
@@ -131,7 +133,7 @@ dependencies {
 
 Do not also copy RetroTouch Java sources into the app module. Keeping the library behind the AAR boundary makes future updates predictable.
 
-The `source/` folder also contains the complete source package (`RetroTouch-1.0.0-beta.11-source.zip`) and detailed integration guides in [English](source/RetroTouch-1.0.0-beta.11-Guide-EN.md) and [German](source/RetroTouch-1.0.0-beta.11-Anleitung-DE.md).
+The `source/` folder also contains the complete source package (`RetroTouch-1.0.0-beta.12-source.zip`) and detailed integration guides in [English](source/RetroTouch-1.0.0-beta.12-Guide-EN.md) and [German](source/RetroTouch-1.0.0-beta.12-Anleitung-DE.md).
 
 ## Minimal integration
 
@@ -361,7 +363,33 @@ final class TouchBridge extends RetroTouchAdapter implements RetroTouchStickList
 retroTouch.setListener(new TouchBridge());
 ```
 
-A layout holds at most two sticks, including the move stick, and 16 buttons. Stick actions never arrive through `onAction`.
+By default a layout holds at most two sticks, including the move stick, and 16 buttons. Stick actions never arrive through `onAction`.
+
+### More sticks, stick icons and finger down/up
+
+![LABELS and ICONS style with four sticks](images/retrotouch-sticks.png)
+
+A game can allow more sticks, give stick actions icons and learn when a finger lands on a stick or leaves it:
+
+```java
+retroTouch.setMaxSticks(4); // move stick + C + AIM + KNIFE
+retroTouch.registerStickAction("cstick", "C", yellow);
+retroTouch.registerStickAction("aimstick", "AIM", null, RetroTouchIcon.CROSSHAIR);
+retroTouch.registerStickAction("knifestick", "KNIFE", null, RetroTouchIcon.KNIFE_HORIZONTAL);
+
+final class Sticks extends RetroTouchAdapter
+        implements RetroTouchStickListener, RetroTouchStickTouchListener {
+    @Override public void onStick(String actionId, float x, float y) { /* tilt, -1..1 */ }
+    @Override public void onStickDown(String actionId) { /* e.g. hold R while on AIM */ }
+    @Override public void onStickUp(String actionId) { /* release R */ }
+}
+retroTouch.setListener(new Sticks());
+```
+
+- **Number of sticks:** `setMaxSticks(n)` sets how many sticks, the move stick included, the player can create in the editor with `ACTION`. The default stays 2, the maximum is 8. Sticks that already exist stay when the limit is lowered.
+- **Icon style:** a stick action's knob shows its icon, else its label, so the sticks can be told apart. The move stick stays without a label. The labels style is unchanged.
+- **Finger down/up:** `onStickDown` and `onStickUp` also come while the finger rests in the center, where `onStick` reports `0, 0`. The move stick reports an empty action ID. `resetInputState()`, mode and layout changes and opening the editor send `onStickUp` for held sticks; dragging in the editor sends nothing.
+- **Saved layouts:** layouts with more than two sticks are saved in the same format. An older RetroTouch cannot read them and falls back to the game's default layout.
 
 ## FPS FIRE and LOOK
 
@@ -456,12 +484,13 @@ The call releases held actions, sends neutral movement for the move stick and ev
 
 | Class | Purpose |
 |---|---|
-| `RetroTouchView` | The overlay: actions, layouts, modes, colors, shapes and aspect ratios, button styles, icons, latches, input reset, safe insets for the editor |
+| `RetroTouchView` | The overlay: actions, stick actions with icons, stick limit, layouts, modes, colors, shapes and aspect ratios, button styles, icons, latches, input reset, safe insets for the editor |
 | `RetroTouchControl` | Factory for buttons (optionally with colors, shape and aspect ratio), move sticks, look zones and D-pads |
 | `RetroTouchLayout` | A game's set of controls with a stable game/layout ID |
 | `RetroTouchAction` | An action ID with its label, optional colors and optional icon |
 | `RetroTouchListener` / `RetroTouchAdapter` | Callbacks: `onAction`, `onMove`, `onLook`, `onEditorStateChanged` |
-| `RetroTouchStickListener` | Optional callback for second analog sticks: `onStick` (beta.7) |
+| `RetroTouchStickListener` | Optional callback for extra analog sticks: `onStick` (beta.7) |
+| `RetroTouchStickTouchListener` | Optional callback when a finger lands on a stick or leaves it: `onStickDown`, `onStickUp` (beta.12) |
 | `RetroTouchColors` | Fill, pressed, border and text colors (beta.5); `withBorderColor` (beta.8); pressed, latched colors and border width for icons (beta.10) |
 | `RetroTouchButtonShape` | `AUTO`, `ROUND`, `RECTANGLE`, `SHOULDER` (beta.8), `ROUNDED_RECT`, `CAPSULE` (beta.10) |
 | `RetroTouchButtonStyle` | `LABELS`, `ICONS` (beta.10) |

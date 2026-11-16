@@ -1,4 +1,4 @@
-# RetroTouch 1.0.0-beta.11 — integration and usage guide
+# RetroTouch 1.0.0-beta.12 — integration and usage guide
 
 ## 1. What RetroTouch is
 
@@ -41,7 +41,7 @@ The host game provides:
 
 ## 3. Add the AAR
 
-Copy `RetroTouch-1.0.0-beta.11.aar` to:
+Copy `RetroTouch-1.0.0-beta.12.aar` to:
 
 ```text
 app/libs/retrotouch.aar
@@ -265,11 +265,14 @@ retroTouch.setListener(new TouchBridge());
 
 Further rules:
 
-- A stick shows its label; a single letter is drawn large on the knob.
+- A stick shows its label; a single letter is drawn large on the knob. In the ICONS style the
+  knob shows the stick action's icon (`registerStickAction(id, label, colors, icon)`, beta.12),
+  else its label.
 - In the editor, a button becomes a stick when the player selects the stick action with `ACTION`;
   pressing `ACTION` again turns it back into a button.
 - A layout holds at most two sticks, including the move stick, and 16 buttons. `ACTION` skips
-  anything that would exceed these limits. A button that cannot become a stick because of the limit
+  anything that would exceed these limits. `setMaxSticks(n)` (beta.12) allows up to 8 sticks;
+  sticks that already exist stay when the limit is lowered. A button that cannot become a stick because of the limit
   stays inactive.
 - Stick actions never arrive through `onAction`. Buttons added with `ADD` get the first ordinary
   action.
@@ -278,6 +281,30 @@ Further rules:
   removes all stick actions.
 - `resetInputState()` reports `0, 0` for every stick action.
 - Listeners without `RetroTouchStickListener` receive nothing from these sticks.
+
+**Finger down and up (beta.12).** A listener that also implements `RetroTouchStickTouchListener`
+learns when a finger lands on a stick and when it leaves, also while it rests in the center where
+`onStick` reports `0, 0`. That makes "hold R while the finger is on AIM" straightforward:
+
+```java
+retroTouch.setMaxSticks(4); // move stick + C + AIM + KNIFE
+retroTouch.registerStickAction("cstick", "C", yellow);
+retroTouch.registerStickAction("aimstick", "AIM", null, RetroTouchIcon.CROSSHAIR);
+retroTouch.registerStickAction("knifestick", "KNIFE", null, RetroTouchIcon.KNIFE_HORIZONTAL);
+
+final class Sticks extends RetroTouchAdapter
+        implements RetroTouchStickListener, RetroTouchStickTouchListener {
+    @Override public void onStick(String actionId, float x, float y) { /* tilt, -1..1 */ }
+    @Override public void onStickDown(String actionId) { /* e.g. hold R while on AIM */ }
+    @Override public void onStickUp(String actionId) { /* release R */ }
+}
+retroTouch.setListener(new Sticks());
+```
+
+- The move stick reports an empty action ID (`""`).
+- `resetInputState()`, mode and layout changes and opening the editor send `onStickUp` for every
+  held stick. Dragging in the editor sends nothing.
+- Two sticks with the same action each report.
 
 ## 8. Icon style (optional)
 
@@ -338,7 +365,8 @@ retroTouch.setStyleListener(new RetroTouchStyleListener() {
   The style toggle is not a control and is never saved in a layout.
 - **Owned by the game:** icons, shapes, aspect ratios and colors come from the game on every load
   and are not stored in saved layouts. A remapped button shows the new action's icon.
-- **ICONS look:** the D-pad is a cross with chevrons; sticks and the look zone show no labels.
+- **ICONS look:** the D-pad is a cross with chevrons; the move stick and the look zone show no
+  labels, a stick action shows its icon or label on the knob (beta.12).
   The border is drawn inside the button, so switching styles moves or resizes nothing; only the
   latched ring reaches past the button and may be cut off at a screen edge.
 - `RetroTouchColors.withBorderWidth(0.05f)` sets another border width for the `ICONS` style.
