@@ -1,4 +1,4 @@
-# RetroTouch 1.0.0-beta.12 — Einbau- und Bedienungsanleitung
+# RetroTouch 1.0.0-beta.13 — Einbau- und Bedienungsanleitung
 
 ## 1. Was RetroTouch ist
 
@@ -42,7 +42,7 @@ Das Spiel übernimmt:
 
 ## 3. AAR einbinden
 
-`RetroTouch-1.0.0-beta.12.aar` hierhin kopieren:
+`RetroTouch-1.0.0-beta.13.aar` hierhin kopieren:
 
 ```text
 app/libs/retrotouch.aar
@@ -381,6 +381,87 @@ retroTouch.setStyleListener(new RetroTouchStyleListener() {
   Design-Wechsel nichts; nur der Ring gehaltener Buttons ragt darüber hinaus und kann am
   Bildschirmrand abgeschnitten werden.
 - `RetroTouchColors.withBorderWidth(0.05f)` setzt eine andere Randbreite für den Stil `ICONS`.
+
+### 8.1 Skins (optional, beta.13)
+
+Skins sind benannte Gesamt-Looks des Overlays, z. B. RE, GC, PS2 und XBOX. Ab zwei Skins schaltet die Stil-Taste im Editor zwischen ihnen um:
+
+```java
+RetroTouchColors black = new RetroTouchColors(Color.rgb(25, 25, 28), Color.rgb(60, 60, 66),
+        Color.rgb(110, 110, 118), Color.rgb(200, 200, 205)).withBorderWidth(0.05f);
+RetroTouchColors grey = new RetroTouchColors(Color.rgb(205, 205, 210), Color.rgb(235, 235, 240),
+        Color.rgb(120, 120, 130), Color.rgb(60, 60, 70));
+
+RetroTouchSkin re = new RetroTouchSkin("re", "RE", RetroTouchButtonStyle.ICONS);
+
+RetroTouchSkin gc = new RetroTouchSkin("gc", "GC", RetroTouchButtonStyle.LABELS)
+        .setStickGate(RetroTouchStickGate.OCTAGON)
+        .setLook("a", new RetroTouchLook().withLabel("A").withColors(RetroTouchColors.of(Color.rgb(30, 170, 120))))
+        .setLook("x", new RetroTouchLook().withLabel("X").withColors(grey)
+                .withShape(RetroTouchButtonShape.KIDNEY).withRotation(100))
+        .setLook("l", new RetroTouchLook().withLabel("L").withColors(grey)
+                .withShape(RetroTouchButtonShape.BUMPER));
+
+RetroTouchSkin ps2 = new RetroTouchSkin("ps2", "PS2", RetroTouchButtonStyle.ICONS)
+        .setDefaultColors(black)
+        .setDpadStyle(RetroTouchDpadStyle.FOUR_BUTTONS)
+        .setDpadIcons(RetroTouchIcon.ARROW_UP, RetroTouchIcon.ARROW_DOWN,
+                RetroTouchIcon.ARROW_LEFT, RetroTouchIcon.ARROW_RIGHT)
+        .setMoveStickLook(new RetroTouchLook().withLabel("L3"))
+        .setLook("a", new RetroTouchLook().withIcon(RetroTouchIcon.SYMBOL_CROSS)
+                .withColors(black.withIconColor(Color.rgb(110, 150, 230))))
+        .setLook("zl", new RetroTouchLook().withLabel("L2").withShape(RetroTouchButtonShape.TRIGGER));
+
+RetroTouchSkin xbox = new RetroTouchSkin("xbox", "XBOX", RetroTouchButtonStyle.LABELS)
+        .setMoveStickLook(new RetroTouchLook().withLabel("LS"))
+        .setLook("l", new RetroTouchLook().withLabel("LB").withShape(RetroTouchButtonShape.BUMPER))
+        .setLook("zl", new RetroTouchLook().withLabel("LT").withShape(RetroTouchButtonShape.TRIGGER));
+
+retroTouch.registerSkin(re);   // die Stil-Taste im Editor schaltet in dieser Reihenfolge
+retroTouch.registerSkin(gc);
+retroTouch.registerSkin(ps2);
+retroTouch.registerSkin(xbox);
+retroTouch.setDefaultSkin("re");
+retroTouch.setSkinListener(new RetroTouchSkinListener() {
+    @Override public void onSkinChanged(String skinId) {
+        // der Spieler hat im Editor gewechselt: eigene Menü-Einstellung anpassen
+    }
+});
+```
+
+**Skins**
+- `registerSkin(skin)` speichert eine Kopie; ein Skin mit gleicher ID ersetzt den alten an seiner Stelle. `clearSkins()`, `getSkins()`, `setDefaultSkin(id)`, `setSkin(id)`, `getSkin()` und `setSkinListener(...)` arbeiten wie die Methoden des Button-Stils.
+- Ab zwei Skins schaltet die Stil-Taste im Editor in Registrierungsreihenfolge durch und zeigt den Namen des Skins. Ein einzelner Skin gilt ohne Taste.
+- Die Wahl des Spielers wird pro Spiel unter einem eigenen Schlüssel gespeichert, getrennt von den Layouts; `RESET` lässt sie unverändert. Ein unbekannter gespeicherter Skin fällt auf den Standard-Skin zurück, sonst auf den ersten.
+- Solange Skins registriert sind, bestimmen sie das Aussehen: `getButtonStyle()` liefert den Basis-Stil des aktiven Skins, und der Labels/Icons-Umschalter entfällt.
+
+**Aussehen je Aktion** (`RetroTouchLook`, alle Werte optional)
+- `withLabel`, `withIcon`, `withColors`, `withShape`, `withAspect`, `withRotation(grad)` und `withOffset(dx, dy)`.
+- Inhalt: Icon des Looks, sonst Beschriftung des Looks, sonst in ICONS-Skins das Icon der Aktion, sonst die Beschriftung der Aktion.
+- Farben: Look, dann Element, Aktion, die Steuerkreuz-Farben des Skins (bei Steuerkreuzen), die Standardfarben des Skins, die Standardfarben der View, eingebautes Grau.
+- `withRotation` dreht die Form (z. B. eine Niere für X und Y); die Beschriftung bleibt aufrecht und die Berührung folgt der gedrehten Form.
+- `withOffset` verschiebt Beschriftung oder Icon um Anteile der Button-Höhe.
+
+**Formen**
+- `KIDNEY` (Seitenverhältnis 1,6), `BUMPER` (2,2) und `TRIGGER` (0,8). Die Größe ist die Höhe.
+- Sie funktionieren auch ohne Skins über `setButtonShape` oder die Element-Fabrik.
+
+**Farben und Icons**
+- `RetroTouchColors.withIconColor(farbe)` / `withIconColors(normal, gedrückt, eingerastet)` geben Icons eine eigene Farbe, z. B. ein blaues Kreuz auf schwarzem Button. Ohne sie nutzen Icons wie bisher die Textfarben.
+- `RetroTouchIcon.asFilled()` füllt die Flächen eines Icons.
+- Neue eingebaute Icons: `SYMBOL_CROSS`, `SYMBOL_CIRCLE`, `SYMBOL_SQUARE`, `SYMBOL_TRIANGLE` und die gefüllten `ARROW_UP`, `ARROW_DOWN`, `ARROW_LEFT`, `ARROW_RIGHT`.
+
+**Sticks und Steuerkreuz**
+- `setMoveStickLook(look)` setzt eine Beschriftung oder ein Icon wie „L“ oder „LS“ auf den Knopf des Bewegungssticks; Looks von Stick-Aktionen tun das für ihre Sticks.
+- `setStickGate(OCTAGON)` zeichnet eine achteckige Führung, der der Knopf folgt; die gemeldeten Werte bleiben gleich.
+- `setDpadStyle(FOUR_BUTTONS)` zeichnet vier einzelne runde Tasten; `setDpadIcons(...)` und `setDpadColors(...)` legen ihre Icons und Farben fest. Die Eingabe des Steuerkreuzes bleibt gleich.
+
+**Zentrierung**
+- In Skins und bei den neuen Formen stehen Beschriftungen und Icons mittig auf ihrer tatsächlichen Zeichenfläche, nicht nach Schriftmetrik. Das gilt für Text wie `L2`, `RT`, `START`, `SELECT` und für Symbole.
+
+**Kompatibilität**
+- Ein Spiel ohne Skins sieht genau aus wie mit beta.12.
+- Skins, Looks und Formen werden nie in gespeicherten Layouts abgelegt.
 
 ## 9. Callbacks mit dem Spiel verbinden
 

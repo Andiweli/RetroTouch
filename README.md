@@ -3,7 +3,7 @@
 > A lightweight, configurable and reusable touch-control overlay for Android games.
 
 [![Android API](https://img.shields.io/badge/Android-API%2016--36-3DDC84?logo=android&logoColor=white)](https://developer.android.com/)
-[![Status](https://img.shields.io/badge/Status-1.0.0--beta.12-orange)](#project-status)
+[![Status](https://img.shields.io/badge/Status-1.0.0--beta.13-orange)](#project-status)
 [![Language](https://img.shields.io/badge/Java-8-ED8B00?logo=openjdk&logoColor=white)](https://www.java.com/)
 ![AI](https://img.shields.io/badge/AI-assisted%20coding-6e7781)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -48,6 +48,8 @@ RetroTouch was created for retro FPS ports that need modern Android multitouch c
 - a style toggle in the editor so players can switch between labels and icons; the game picks the default
 - rounded-rectangle and capsule buttons with an aspect ratio per control or per action
 - separate colors for pressed and latched buttons
+- optional skins such as RE, GC, PS2 or XBOX that the player cycles with the editor's style button
+- kidney, bumper and trigger shapes, two-colour and filled icons, a four-button D-pad and octagonal stick gates
 
 **Modes and layouts**
 - independent `OFF`, `GAMEPLAY` and optional `NAVIGATION` modes
@@ -84,13 +86,14 @@ RetroTouch is designed for:
 
 <img width="1536" height="864" alt="image" src="https://github.com/Andiweli/RetroTouch/blob/main/images/retrotouch-button-styles.png" />
 
-The current release is **RetroTouch 1.0.0-beta.12**.
+The current release is **RetroTouch 1.0.0-beta.13**.
 
 | Version | Date | Highlights |
 |---|---|---|
 | beta.10 | 2026-11-10 | Optional icon style with 14 icons and a style toggle in the editor; capsule and rounded-rectangle shapes; aspect ratio per action; pressed and latched colors |
 | beta.11 | 2026-11-14 | Safe insets keep the editor bar clear of a camera cutout (`setSafeInsets`) |
 | beta.12 | 2026-11-16 | Up to 8 sticks per layout (`setMaxSticks`); icons and labels on stick knobs in the icon style; finger down/up per stick (`RetroTouchStickTouchListener`) |
+| beta.13 | 2026-11-17 | Skins such as RE, GC, PS2 and XBOX that the player cycles in the editor; kidney, bumper and trigger shapes; two-colour and filled icons with PlayStation-style symbols; four-button D-pad; octagonal stick gates; labels on the move stick's knob; optical centering |
 | beta.9 | 2026-11-03 | Controls reach every screen edge, thicker borders, stick knobs run along the ring |
 | beta.8 | 2026-11-03 | Rectangle buttons for START, SELECT, MENU, shoulders and triggers; border colors; fitted editor frame |
 | beta.7 | 2026-10-26 | Optional second analog stick that reports separately (`onStick`) |
@@ -101,7 +104,7 @@ The current release is **RetroTouch 1.0.0-beta.12**.
 | beta.2 | 2026-08-27 | Universal one- or two-line button labels |
 | beta.1 | 2026-08-27 | First public beta with the complete core feature set |
 
-The complete core feature set has been tested with the Android port of **Breathless**, including multitouch movement, relative look, held FIRE while turning, always-run indication, D-pad menu navigation, controller detection and editable layouts. The additions of beta.5 to beta.12 are covered by automated rendering tests against the released AAR. The beta phase continues while RetroTouch is tested across additional engines and input stacks.
+The complete core feature set has been tested with the Android port of **Breathless**, including multitouch movement, relative look, held FIRE while turning, always-run indication, D-pad menu navigation, controller detection and editable layouts. The additions of beta.5 to beta.13 are covered by automated rendering tests against the released AAR. The beta phase continues while RetroTouch is tested across additional engines and input stacks.
 
 ## How RetroTouch is structured
 
@@ -117,7 +120,7 @@ The AAR is compiled into the final application. It cannot be exchanged inside an
 
 ## Installation with the AAR
 
-The current AAR is in this repository as [`source/RetroTouch-1.0.0-beta.12.aar`](source/RetroTouch-1.0.0-beta.12.aar). Copy it into the application module as:
+The current AAR is in this repository as [`source/RetroTouch-1.0.0-beta.13.aar`](source/RetroTouch-1.0.0-beta.13.aar). Copy it into the application module as:
 
 ```text
 app/libs/retrotouch.aar
@@ -133,7 +136,7 @@ dependencies {
 
 Do not also copy RetroTouch Java sources into the app module. Keeping the library behind the AAR boundary makes future updates predictable.
 
-The `source/` folder also contains the complete source package (`RetroTouch-1.0.0-beta.12-source.zip`) and detailed integration guides in [English](source/RetroTouch-1.0.0-beta.12-Guide-EN.md) and [German](source/RetroTouch-1.0.0-beta.12-Anleitung-DE.md).
+The `source/` folder also contains the [release notes](source/RetroTouch-1.0.0-beta.13-Release-Notes.md), the complete source package (`RetroTouch-1.0.0-beta.13-source.zip`) and detailed integration guides in [English](source/RetroTouch-1.0.0-beta.13-Guide-EN.md) and [German](source/RetroTouch-1.0.0-beta.13-Anleitung-DE.md).
 
 ## Minimal integration
 
@@ -332,6 +335,89 @@ retroTouch.setStyleListener(new RetroTouchStyleListener() {
 - `withPressedColors` and `withLatchedColors` set fill, border and icon color for those states; without them RetroTouch derives them (latched border: gold).
 - `withBorderWidth(0.05f)` sets another border width for the `ICONS` style.
 
+## Skins
+
+![Four skins of the same layout: RE, GC, PS2 and XBOX](images/retrotouch-skins.png)
+
+Since beta.13 a game can register any number of named looks, called skins, for example RE, GC, PS2 and XBOX. With two or more, the editor's style button cycles through them, and the player's choice is saved per game. A skin sets the look of each action: label or icon, colors, shape, rotation and a fine offset. It also sets the move stick's label, the stick gate and the D-pad style.
+
+```java
+RetroTouchColors black = new RetroTouchColors(Color.rgb(25, 25, 28), Color.rgb(60, 60, 66),
+        Color.rgb(110, 110, 118), Color.rgb(200, 200, 205)).withBorderWidth(0.05f);
+RetroTouchColors grey = new RetroTouchColors(Color.rgb(205, 205, 210), Color.rgb(235, 235, 240),
+        Color.rgb(120, 120, 130), Color.rgb(60, 60, 70));
+
+RetroTouchSkin re = new RetroTouchSkin("re", "RE", RetroTouchButtonStyle.ICONS);
+
+RetroTouchSkin gc = new RetroTouchSkin("gc", "GC", RetroTouchButtonStyle.LABELS)
+        .setStickGate(RetroTouchStickGate.OCTAGON)
+        .setLook("a", new RetroTouchLook().withLabel("A").withColors(RetroTouchColors.of(Color.rgb(30, 170, 120))))
+        .setLook("x", new RetroTouchLook().withLabel("X").withColors(grey)
+                .withShape(RetroTouchButtonShape.KIDNEY).withRotation(100))
+        .setLook("l", new RetroTouchLook().withLabel("L").withColors(grey)
+                .withShape(RetroTouchButtonShape.BUMPER));
+
+RetroTouchSkin ps2 = new RetroTouchSkin("ps2", "PS2", RetroTouchButtonStyle.ICONS)
+        .setDefaultColors(black)
+        .setDpadStyle(RetroTouchDpadStyle.FOUR_BUTTONS)
+        .setDpadIcons(RetroTouchIcon.ARROW_UP, RetroTouchIcon.ARROW_DOWN,
+                RetroTouchIcon.ARROW_LEFT, RetroTouchIcon.ARROW_RIGHT)
+        .setMoveStickLook(new RetroTouchLook().withLabel("L3"))
+        .setLook("a", new RetroTouchLook().withIcon(RetroTouchIcon.SYMBOL_CROSS)
+                .withColors(black.withIconColor(Color.rgb(110, 150, 230))))
+        .setLook("zl", new RetroTouchLook().withLabel("L2").withShape(RetroTouchButtonShape.TRIGGER));
+
+RetroTouchSkin xbox = new RetroTouchSkin("xbox", "XBOX", RetroTouchButtonStyle.LABELS)
+        .setMoveStickLook(new RetroTouchLook().withLabel("LS"))
+        .setLook("l", new RetroTouchLook().withLabel("LB").withShape(RetroTouchButtonShape.BUMPER))
+        .setLook("zl", new RetroTouchLook().withLabel("LT").withShape(RetroTouchButtonShape.TRIGGER));
+
+retroTouch.registerSkin(re);   // the editor's style button cycles in this order
+retroTouch.registerSkin(gc);
+retroTouch.registerSkin(ps2);
+retroTouch.registerSkin(xbox);
+retroTouch.setDefaultSkin("re");
+retroTouch.setSkinListener(new RetroTouchSkinListener() {
+    @Override public void onSkinChanged(String skinId) {
+        // the player switched in the editor: update the game's own menu setting
+    }
+});
+```
+
+**Skins**
+- `registerSkin(skin)` keeps a copy; a skin with the same ID replaces the old one in place. `clearSkins()`, `getSkins()`, `setDefaultSkin(id)`, `setSkin(id)`, `getSkin()` and `setSkinListener(...)` work like the button style methods.
+- With two or more skins, the editor's style button cycles through them in registration order and shows the skin's name. With one skin it applies without a button.
+- The player's choice is saved per game under its own key, separate from layouts; `RESET` keeps it. An unknown saved skin falls back to the default skin, else the first.
+- While skins are registered, they decide the look: `getButtonStyle()` returns the active skin's base style, and the LABELS / ICONS toggle is replaced.
+
+**Looks per action** (`RetroTouchLook`, all values optional)
+- `withLabel`, `withIcon`, `withColors`, `withShape`, `withAspect`, `withRotation(degrees)` and `withOffset(dx, dy)`.
+- Content: the look's icon, else the look's label, else in an ICONS-based skin the action's icon, else the action's label.
+- Colors: look, then control, action, the skin's D-pad colors (D-pads), the skin's default colors, the view's default colors, built-in grey.
+- `withRotation` turns the shape (for example a KIDNEY for X and Y); the label stays upright and touch follows the turned shape.
+- `withOffset` moves the label or icon by fractions of the button's height.
+
+**Shapes**
+- `KIDNEY` (default aspect 1.6), `BUMPER` (2.2) and `TRIGGER` (0.8). The size is the height.
+- They also work without skins through `setButtonShape` or the control factory.
+
+**Colors and icons**
+- `RetroTouchColors.withIconColor(color)` / `withIconColors(normal, pressed, latched)` give icons their own color, for example a blue cross on a black button. Without them icons use the text colors, as before.
+- `RetroTouchIcon.asFilled()` fills an icon's shapes.
+- New built-in icons: `SYMBOL_CROSS`, `SYMBOL_CIRCLE`, `SYMBOL_SQUARE`, `SYMBOL_TRIANGLE` and the filled `ARROW_UP`, `ARROW_DOWN`, `ARROW_LEFT`, `ARROW_RIGHT`.
+
+**Sticks and D-pads**
+- `setMoveStickLook(look)` puts a label or icon such as "L" or "LS" on the move stick's knob; looks of stick actions do the same for their sticks.
+- `setStickGate(OCTAGON)` draws an octagonal gate that the knob follows; the reported values stay the same.
+- `setDpadStyle(FOUR_BUTTONS)` draws four separate round buttons; `setDpadIcons(...)` and `setDpadColors(...)` set their icons and colors. D-pad input is unchanged.
+
+**Centering**
+- In skins, and for the new shapes, labels and icons are centered on their ink rather than on font metrics. This applies to text such as `L2`, `RT`, `START`, `SELECT` and to symbols.
+
+**Compatibility**
+- A game without skins draws exactly as with beta.12.
+- Skins, looks and shapes are never stored in saved layouts.
+
 ## Analog sticks
 
 The move stick reports through `onMove` with values from `-1.0` to `1.0`. The knob runs with its center along the ring, and full deflection is reached at the ring.
@@ -484,18 +570,23 @@ The call releases held actions, sends neutral movement for the move stick and ev
 
 | Class | Purpose |
 |---|---|
-| `RetroTouchView` | The overlay: actions, stick actions with icons, stick limit, layouts, modes, colors, shapes and aspect ratios, button styles, icons, latches, input reset, safe insets for the editor |
+| `RetroTouchView` | The overlay: actions, stick actions with icons, stick limit, layouts, modes, colors, shapes and aspect ratios, button styles, skins, icons, latches, input reset, safe insets for the editor |
 | `RetroTouchControl` | Factory for buttons (optionally with colors, shape and aspect ratio), move sticks, look zones and D-pads |
 | `RetroTouchLayout` | A game's set of controls with a stable game/layout ID |
 | `RetroTouchAction` | An action ID with its label, optional colors and optional icon |
 | `RetroTouchListener` / `RetroTouchAdapter` | Callbacks: `onAction`, `onMove`, `onLook`, `onEditorStateChanged` |
 | `RetroTouchStickListener` | Optional callback for extra analog sticks: `onStick` (beta.7) |
 | `RetroTouchStickTouchListener` | Optional callback when a finger lands on a stick or leaves it: `onStickDown`, `onStickUp` (beta.12) |
-| `RetroTouchColors` | Fill, pressed, border and text colors (beta.5); `withBorderColor` (beta.8); pressed, latched colors and border width for icons (beta.10) |
-| `RetroTouchButtonShape` | `AUTO`, `ROUND`, `RECTANGLE`, `SHOULDER` (beta.8), `ROUNDED_RECT`, `CAPSULE` (beta.10) |
+| `RetroTouchColors` | Fill, pressed, border and text colors (beta.5); `withBorderColor` (beta.8); pressed, latched colors and border width for icons (beta.10); icon colors `withIconColor`, `withIconColors` (beta.13) |
+| `RetroTouchButtonShape` | `AUTO`, `ROUND`, `RECTANGLE`, `SHOULDER` (beta.8), `ROUNDED_RECT`, `CAPSULE` (beta.10), `KIDNEY`, `BUMPER`, `TRIGGER` (beta.13) |
 | `RetroTouchButtonStyle` | `LABELS`, `ICONS` (beta.10) |
-| `RetroTouchIcon` | Built-in icons and `fromPaths` for own SVG path data (beta.10) |
+| `RetroTouchIcon` | Built-in icons and `fromPaths` for own SVG path data (beta.10); `asFilled`, symbols and filled arrows (beta.13) |
 | `RetroTouchStyleListener` | Optional callback when the player switches the style: `onButtonStyleChanged` (beta.10) |
+| `RetroTouchSkin` | A named look of the whole overlay with looks per action, move-stick look, D-pad style and icons, stick gate (beta.13) |
+| `RetroTouchLook` | How one action looks in a skin: label, icon, colors, shape, aspect ratio, rotation, offset (beta.13) |
+| `RetroTouchSkinListener` | Optional callback when the player switches the skin: `onSkinChanged` (beta.13) |
+| `RetroTouchDpadStyle` | `CROSS`, `FOUR_BUTTONS` (beta.13) |
+| `RetroTouchStickGate` | `ROUND`, `OCTAGON` (beta.13) |
 | `RetroTouchMode` | `OFF`, `GAMEPLAY`, `NAVIGATION` |
 | `RetroTouchNavigation` | Stable D-pad action IDs `nav_up`, `nav_down`, `nav_left`, `nav_right` |
 | `RetroTouchControllers` | `isControllerConnected()` |
